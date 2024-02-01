@@ -571,10 +571,12 @@ void PRINT(cufftDoubleComplex* f, int iW, char type) {
 	cufftExecZ2D(bplan, Jack1, a_d);
 	Multiplication << <dimGrid2, dimBlock >> > (a_d, b_d);
 	cudaMemcpy(outH, b_d, dsize, cudaMemcpyDeviceToHost);
-	ostringstream num;	num << iW;
+	std::ostringstream num;	num << iW;
 
-	if (type == 'k') FoutW.open((str + "/outW/out" + num.str()).c_str(), ios::binary | ios::out);
-	if (type == 'm') FoutW.open((str + "/outJ/out" + num.str()).c_str(), ios::binary | ios::out);
+	if (type == 'k') 
+		FoutW.open((str + "outW/out" + num.str()).c_str(), std::ios::binary | std::ios::out);
+	if (type == 'm') 
+		FoutW.open((str + "outJ/out" + num.str()).c_str(), std::ios::binary | std::ios::out);
 
 	FoutW.write((char*)outH, dsize);
 
