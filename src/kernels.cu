@@ -1,8 +1,9 @@
 ﻿#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#include "kernels.cuh"
+
 #include <stdio.h>
-#include <cufft.h>
 #include <math.h>
 #include <stdlib.h>
 #include <cstdlib>
@@ -14,7 +15,7 @@
 #include <sstream>
 #include <direct.h>
 
-using namespace std;
+#include <cufft.h>
 
 #define nu	1e-4
 #define eta	1e-4
@@ -27,7 +28,7 @@ using namespace std;
 #define E_B 0.5
 #define Tend 5.0
 #define B0 0.0   
-#define Nsteps 3
+#define Nsteps 2
 #define FlagOut 1
 #define alpha 0.00
 #define M_PI 3.141592653589793238462643
@@ -38,11 +39,11 @@ const double cfl = 0.2;
 const double cfl = 0.5;
 #endif
 
-const int N = 1024 * 4;
+const int N = 512;
 const double lamda = 1. / ((double)(N * N));
 const double h = 2. * M_PI / (double)N;
 
-double dTout = 0.5;
+double dTout = 0.1;
 double Tout = dTout;
 
 const int XYmax = N / 3;
@@ -72,7 +73,7 @@ double* outH;
 
 const int csize = N * (N / 2 + 1) * sizeof(cufftDoubleComplex);
 const int dsize = N * N * sizeof(double);
-string str;
+std::string str;
 
 cufftHandle plan, bplan;
 
@@ -80,9 +81,9 @@ int num_out = 0;
 
 
 FILE* Fout;
-ofstream FoutW;
-ofstream Fout2;
-FILE* Ftime = fopen("time", "a");
+std::ofstream FoutW;
+std::ofstream Fout2;
+FILE* Ftime = fopen("outputs/time.txt", "a");
 
 
 const int K1 = 32;
@@ -176,31 +177,36 @@ void CreateFolder() {
 	strftime(parentfoldername, 40, "%Y%m%d/", localtime(&seconds));
 	strftime(foldername, 40, "%Y%m%d_%H%M%S", localtime(&seconds));
 
-	cout << foldername << endl;
-	cout << "N = " << setw(13) << left << N << "Tend=" << setw(12) << left << Tend << "dTout=" << dTout << endl;
-	cout << "E_u0 = " << setw(10) << left << E_K << "E_b0 = " << setw(10) << left << E_B << "F_U = " << setw(10) << left << G_K << "F_B = " << G_B << endl;
-	cout << "beta = " << setw(10) << left << beta << "B0   = " << setw(10) << left << B0 << "nu  = " << setw(10) << left << nu << "eta = " << eta << endl;
+	std::cout << foldername << std::endl;
+	std::cout << "N = " << std::setw(13) << std::left << N << "Tend=" << std::setw(12) << std::left << Tend << "dTout=" << dTout << std::endl;
+	std::cout << "E_u0 = " << std::setw(10) << std::left << E_K << "E_b0 = " << std::setw(10) << std::left << E_B << "F_U = " << std::setw(10) << std::left << G_K << "F_B = " << G_B << std::endl;
+	std::cout << "beta = " << std::setw(10) << std::left << beta << "B0   = " << std::setw(10) << std::left << B0 << "nu  = " << std::setw(10) << std::left << nu << "eta = " << eta << std::endl;
 
-	str = "D:/";
-	str = str + string(parentfoldername);
-	if (mkdir(str.c_str()) != 0) cout << "error create directory " << str << endl;
-	str = str + "/" + string(foldername);
-	if (mkdir(str.c_str()) != 0) cout << "error create directory " << str << endl;
+	str = "outputs/data/";
+	mkdir(str.c_str());
 
-	Fout = fopen((str + "/out").c_str(), "w+");
+	str = str + std::string(parentfoldername) + "/";
+	mkdir(str.c_str());
 
-	Fout2.open((str + "/out2").c_str());
-	Fout2 << "N=\t" << N << "\nTend=\t" << Tend << "\ndTout=\t" << dTout << "\nE_K=\t" << E_K << "\nE_B=\t" << E_B << endl;
-	Fout2 << "G_K=\t" << G_K << "\nG_B=\t" << G_B << "\nk0=\t" << k0 << "\ndk=\t" << dk << endl;
-	Fout2 << "beta=\t" << beta << "\nB0=\t" << B0 << "\nnu=\t" << nu << "\neta=\t" << eta << "\ncfl=\t" << cfl << endl;
+	str = str + std::string(foldername) + "/";
+	mkdir(str.c_str());
+
+	Fout = fopen((str + "out").c_str(), "w+");
+
+	Fout2.open((str + "out2").c_str());
+	Fout2 << "N=\t" << N << "\nTend=\t" << Tend << "\ndTout=\t" << dTout << "\nE_K=\t" << E_K << "\nE_B=\t" << E_B << std::endl;
+	Fout2 << "G_K=\t" << G_K << "\nG_B=\t" << G_B << "\nk0=\t" << k0 << "\ndk=\t" << dk << std::endl;
+	Fout2 << "beta=\t" << beta << "\nB0=\t" << B0 << "\nnu=\t" << nu << "\neta=\t" << eta << "\ncfl=\t" << cfl << std::endl;
 	Fout2.close();
 
-	if (mkdir((str + "/outW").c_str()) != 0) cout << "error create directory outW" << endl;
-	if (mkdir((str + "/outJ").c_str()) != 0) cout << "error create directory outJ" << endl;
+	if (mkdir((str + "outW").c_str()) != 0) 
+		std::cout << "error create directory outW" << std::endl;
+	if (mkdir((str + "outJ").c_str()) != 0) 
+		std::cout << "error create directory outJ" << std::endl;
 
 }
 
-int main() {
+void cuda_main() {
 
 	cudaSetDevice(0);
 
@@ -268,7 +274,7 @@ int main() {
 	Phi = (double*)malloc(N * (N / 2 + 1) * sizeof(double));
 	for (int i = 0; i < N * (N / 2 + 1); i++)
 		Phi[i] = 2 * M_PI * (double)rand() / RAND_MAX;
-	cout << Phi[0] << "\t" << Phi[1] << "\t" << Phi[2] << "\t" << Phi[3] << endl;
+	std::cout << Phi[0] << "\t" << Phi[1] << "\t" << Phi[2] << "\t" << Phi[3] << std::endl;
 	cudaMemcpy(a_d, Phi, N * (N / 2 + 1) * sizeof(double), cudaMemcpyHostToDevice);
 
 	ZeroTimeNew << <dimGrid, dimBlock >> > (S, a_d);
@@ -285,7 +291,7 @@ int main() {
 	Phi = (double*)malloc(N * (N / 2 + 1) * sizeof(double));
 	for (int i = 0; i < N * (N / 2 + 1); i++)
 		Phi[i] = 2 * M_PI * (double)rand() / RAND_MAX;
-	cout << Phi[0] << "\t" << Phi[1] << "\t" << Phi[2] << "\t" << Phi[3] << endl;
+	std::cout << Phi[0] << "\t" << Phi[1] << "\t" << Phi[2] << "\t" << Phi[3] << std::endl;
 	cudaMemcpy(a_d, Phi, N * (N / 2 + 1) * sizeof(double), cudaMemcpyHostToDevice);
 
 	ZeroTimeNew << <dimGrid, dimBlock >> > (A, a_d);
