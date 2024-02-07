@@ -11,22 +11,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Solver.cuh" />
-    <ClInclude Include="src\Helper.cuh" />
-    <ClInclude Include="src\FastFourierTransformator.cuh" />
-    <ClInclude Include="src\KernelCaller.cuh" />
-    <ClInclude Include="src\SolverKernels.cuh" />
-    <ClInclude Include="src\Application.cuh" />
-    <ClInclude Include="src\HelperKernels.cuh" />
-    <ClInclude Include="src\Params.h" />
-    <ClInclude Include="src\Buffers.cuh" />
-    <ClInclude Include="src\Writer.cuh" />
+    <ClInclude Include="src\cuda\Buffers.cuh" />
+    <ClInclude Include="src\cuda\FastFourierTransformator.cuh" />
+    <ClInclude Include="src\cuda\Helper.cuh" />
+    <ClInclude Include="src\cuda\HelperKernels.cuh" />
+    <ClInclude Include="src\cuda\KernelCaller.cuh" />
+    <ClInclude Include="src\cuda\Solver.cuh" />
+    <ClInclude Include="src\cuda\SolverKernels.cuh" />
+    <ClInclude Include="src\cuda\Writer.cuh" />
+    <ClInclude Include="src\params.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\Application.cu" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Application.cpp" />
+    <CudaCompile Include="src\cuda\Buffers.cu" />
+    <CudaCompile Include="src\cuda\FastFourierTransformator.cu" />
+    <CudaCompile Include="src\cuda\Helper.cu" />
+    <CudaCompile Include="src\cuda\Solver.cu" />
+    <CudaCompile Include="src\cuda\Writer.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{292E4497-F040-4539-8E88-E4467E21CFF9}</ProjectGuid>
