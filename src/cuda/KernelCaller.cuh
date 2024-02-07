@@ -1,13 +1,14 @@
 #pragma once
+
 #include "cuda_runtime.h"
 
-#include "Params.h"
+#include "../params.h"
 
 #define CUDA_CALL(result) \
     checkCudaError(result, __FUNCTION__, __FILE__, __LINE__)
 
-void checkCudaError(cudaError_t result, const std::string& functionName,
-                    const std::string& fileName, int lineNumber) {
+inline void checkCudaError(cudaError_t result, const std::string& functionName,
+                           const std::string& fileName, int lineNumber) {
     if (result != cudaSuccess) {
         std::cerr << "CUDA Error in " << functionName << " at " << fileName
                   << ":" << lineNumber << " - " << cudaGetErrorString(result)

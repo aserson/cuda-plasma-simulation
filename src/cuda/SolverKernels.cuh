@@ -3,7 +3,7 @@
 
 #include <cufft.h>
 
-#include "Params.h"
+#include "../params.h"
 
 namespace mhd {
 // Jacobian Kernels

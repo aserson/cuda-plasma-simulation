@@ -23,7 +23,7 @@ struct InitialCondition {
 };
 
 struct SimulationParameters {
-    static const unsigned int gridLength = 2048;
+    static const unsigned int gridLength = 1024;
     static constexpr double gridStep = 2. * M_PI / ((double)gridLength);
     static constexpr double lambda = 1. / ((double)(gridLength * gridLength));
 
@@ -39,7 +39,7 @@ struct SimulationParameters {
 };
 
 struct OutputParameters {
-    static constexpr double stepTime = 0.01;
+    static constexpr double stepTime = 1.0;
 
     static constexpr double startTime = 0.0;
     static constexpr double stopTime = stepTime + 1000 * stepTime;
@@ -76,7 +76,9 @@ struct CurrentParameters {
     double timeStepOut = mhd::parameters::OutputParameters::stepTime;
 };
 
-void ParametersPrint() {
+std::string inline ParametersPrint() {
+    std::ostringstream output;
+
     unsigned int N = SimulationParameters::gridLength;
     double T = SimulationParameters::time;
 
@@ -86,28 +88,29 @@ void ParametersPrint() {
     double nu = EquationCoefficients::nu;
     double eta = EquationCoefficients::eta;
 
-    std::cout << "Simulation parameters:" << std::endl;
-    std::cout << "  Grid Lenght = " << std::setw(13) << std::left << N
-              << std::endl;
-    std::cout << "  End Time = " << std::setw(12) << std::left << T
-              << std::endl;
-    std::cout << std::endl;
+    output << "Simulation parameters:" << std::endl;
+    output << "  Grid Lenght = " << std::setw(13) << std::left << N
+           << std::endl;
+    output << "  End Time = " << std::setw(12) << std::left << T << std::endl;
+    output << std::endl;
 
-    std::cout << "Initial condition:" << std::endl;
-    std::cout << "  Ekin = " << std::setw(13) << std::left << kineticEnergy
-              << std::endl;
-    std::cout << "  Emag = " << std::setw(13) << std::left << magneticEnergy
-              << std::endl;
-    std::cout << std::endl;
+    output << "Initial condition:" << std::endl;
+    output << "  Ekin = " << std::setw(13) << std::left << kineticEnergy
+           << std::endl;
+    output << "  Emag = " << std::setw(13) << std::left << magneticEnergy
+           << std::endl;
+    output << std::endl;
 
-    std::cout << "Equation coefficients:" << std::endl;
-    std::cout << "  nu = " << std::setw(13) << std::left << nu << std::endl;
-    std::cout << "  eta = " << std::setw(13) << std::left << eta << std::endl;
+    output << "Equation coefficients:" << std::endl;
+    output << "  nu = " << std::setw(13) << std::left << nu << std::endl;
+    output << "  eta = " << std::setw(13) << std::left << eta << std::endl;
 
-    std::cout << std::endl;
+    output << std::endl;
+
+    return output.str();
 }
 
-void ParametersSave(const std::filesystem::path& outputDir) {
+void inline ParametersSave(const std::filesystem::path& outputDir) {
     unsigned int N = SimulationParameters::gridLength;
     double T = SimulationParameters::time;
 
