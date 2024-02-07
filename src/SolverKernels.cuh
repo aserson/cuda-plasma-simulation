@@ -1,16 +1,18 @@
 ﻿#pragma once
+#include "cuda_runtime.h"
 
-#include "Helper.cuh"
-#include "KernelCaller.cuh"
+#include <cufft.h>
 
-enum JacobianType { First = 1, Second, Third };
+#include "Params.h"
 
+namespace mhd {
+// Jacobian Kernels
 __global__ void DealaliasingDiffByX_kernel(const cufftDoubleComplex* input,
                                            cufftDoubleComplex* output) {
     const unsigned int gridLength =
         mhd::parameters::SimulationParameters::gridLength;
     const unsigned int dealWN =
-        mhd::parameters::SimulationParameters::dealaliasingWaveNumber;
+        mhd::parameters::SimulationParameters::dealaliasingWN;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -38,7 +40,7 @@ __global__ void DealaliasingDiffByY_kernel(const cufftDoubleComplex* input,
     const unsigned int gridLength =
         mhd::parameters::SimulationParameters::gridLength;
     const unsigned int dealWN =
-        mhd::parameters::SimulationParameters::dealaliasingWaveNumber;
+        mhd::parameters::SimulationParameters::dealaliasingWN;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -91,7 +93,7 @@ __global__ void Dealaliasing_kernel(cufftDoubleComplex* output) {
     const unsigned int gridLength =
         mhd::parameters::SimulationParameters::gridLength;
     const unsigned int dealWN =
-        mhd::parameters::SimulationParameters::dealaliasingWaveNumber;
+        mhd::parameters::SimulationParameters::dealaliasingWN;
 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -111,35 +113,66 @@ __global__ void Dealaliasing_kernel(cufftDoubleComplex* output) {
     }
 }
 
-void calcJacobian(const GpuComplexBuffer& leftField,
-                  const GpuComplexBuffer& rightField,
-                  const mhd::FastFourierTransformator& transformator,
-                  AuxiliaryFields& aux) {
-    CallKernel(DealaliasingDiffByX_kernel, leftField.data(),
-               aux._complexTmp.data());
-    transformator.inverseFFT(aux._complexTmp.data(), aux._doubleTmpA.data());
+// Equation Kernels
+__global__ void FirstRigthPart_kernel(cufftDoubleComplex* w,
+                                      cufftDoubleComplex* jacobian,
+                                      cufftDoubleComplex* rightPart) {
+    unsigned int gridLength = mhd::parameters::SimulationParameters::gridLength;
+    double nu = mhd::parameters::EquationCoefficients::nu;
 
-    CallKernel(DealaliasingDiffByY_kernel, rightField.data(),
-               aux._complexTmp.data());
-    transformator.inverseFFT(aux._complexTmp.data(), aux._doubleTmpB.data());
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = (gridLength / 2 + 1) * x + y;
 
-    KernelCaller::call<GridType::Full>(
-        JacobianFirstPart_kernel, aux._doubleTmpA.data(),
-        aux._doubleTmpB.data(), aux._doubleTmpC.data());
+    if (x > gridLength / 2)
+        x = x - gridLength;
+    double value = (double)(x * x + y * y);
 
-    CallKernel(DealaliasingDiffByY_kernel, leftField.data(),
-               aux._complexTmp.data());
-    transformator.inverseFFT(aux._complexTmp.data(), aux._doubleTmpA.data());
-
-    CallKernel(DealaliasingDiffByX_kernel, rightField.data(),
-               aux._complexTmp.data());
-    transformator.inverseFFT(aux._complexTmp.data(), aux._doubleTmpB.data());
-
-    KernelCaller::call<GridType::Full>(
-        JacobianSecondPart_kernel, aux._doubleTmpA.data(),
-        aux._doubleTmpB.data(), aux._doubleTmpC.data());
-
-    transformator.forwardFFT(aux._doubleTmpC.data(), aux._complexTmp.data());
-
-    CallKernel(Dealaliasing_kernel, aux._complexTmp.data());
+    rightPart[idx].x = jacobian[idx].x - nu * value * w[idx].x;
+    rightPart[idx].y = jacobian[idx].y - nu * value * w[idx].y;
 }
+
+__global__ void SecondRigthPart_kernel(cufftDoubleComplex* jacobian,
+                                       cufftDoubleComplex* rightPart) {
+    unsigned int gridLength = mhd::parameters::SimulationParameters::gridLength;
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = (gridLength / 2 + 1) * x + y;
+
+    rightPart[idx].x += jacobian[idx].x;
+    rightPart[idx].y += jacobian[idx].y;
+}
+
+__global__ void ThirdRigthPart_kernel(cufftDoubleComplex* a,
+                                      cufftDoubleComplex* jacobian,
+                                      cufftDoubleComplex* rightPart) {
+    unsigned int gridLength = mhd::parameters::SimulationParameters::gridLength;
+    double eta = mhd::parameters::EquationCoefficients::eta;
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = (gridLength / 2 + 1) * x + y;
+
+    if (x > gridLength / 2)
+        x = x - gridLength;
+    double value = (double)(x * x + y * y);
+
+    rightPart[idx].x = jacobian[idx].x - eta * value * a[idx].x;
+    rightPart[idx].y = jacobian[idx].y - eta * value * a[idx].y;
+}
+
+// Time Scheme Kernels
+__global__ void TimeScheme_kernel(cufftDoubleComplex* field,
+                                  const cufftDoubleComplex* oldField,
+                                  const cufftDoubleComplex* rightPart,
+                                  unsigned int gridLength, double dt,
+                                  double weight = 1.0) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = (gridLength / 2 + 1) * x + y;
+
+    field[idx].x = oldField[idx].x + weight * rightPart[idx].x * dt;
+    field[idx].y = oldField[idx].y + weight * rightPart[idx].y * dt;
+}
+}  // namespace mhd

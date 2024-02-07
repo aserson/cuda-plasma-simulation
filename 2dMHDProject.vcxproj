@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\EquationSolver.cuh" />
+    <ClInclude Include="src\Solver.cuh" />
     <ClInclude Include="src\Helper.cuh" />
-    <ClInclude Include="src\InitialFields.cuh" />
-    <ClInclude Include="src\IntegralFunctions.cuh" />
+    <ClInclude Include="src\FastFourierTransformator.cuh" />
     <ClInclude Include="src\KernelCaller.cuh" />
-    <ClInclude Include="src\Jacobian.cuh" />
+    <ClInclude Include="src\SolverKernels.cuh" />
     <ClInclude Include="src\Application.cuh" />
+    <ClInclude Include="src\HelperKernels.cuh" />
     <ClInclude Include="src\Params.h" />
-    <ClInclude Include="src\SimpleFunctions.cuh" />
+    <ClInclude Include="src\Buffers.cuh" />
     <ClInclude Include="src\Writer.cuh" />
   </ItemGroup>
   <ItemGroup>

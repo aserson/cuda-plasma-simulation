@@ -1,13 +1,24 @@
 #pragma once
-
 #include "cuda_runtime.h"
 
 #include "Params.h"
 
+#define CUDA_CALL(result) \
+    checkCudaError(result, __FUNCTION__, __FILE__, __LINE__)
+
+void checkCudaError(cudaError_t result, const std::string& functionName,
+                    const std::string& fileName, int lineNumber) {
+    if (result != cudaSuccess) {
+        std::cerr << "CUDA Error in " << functionName << " at " << fileName
+                  << ":" << lineNumber << " - " << cudaGetErrorString(result)
+                  << std::endl;
+    }
+}
+
 enum GridType { Half, Full, Linear };
 
 class KernelCaller {
-   private:
+private:
     // One-dimensional grid
     static const unsigned int dimBlockLinear =
         mhd::parameters::KernelRunParameters::blockSizeLinear;
@@ -25,7 +36,7 @@ class KernelCaller {
     static const unsigned int dimGridY =
         mhd::parameters::KernelRunParameters::gridSizeY;
 
-   public:
+public:
     template <GridType Type, typename Kernel, typename... TArgs>
     static void call(Kernel kernel, TArgs... args) {
         dim3 dimBlock;
