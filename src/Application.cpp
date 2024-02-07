@@ -26,8 +26,8 @@ std::string CreateOutputDir(const std::filesystem::path& parentDir) {
     std::filesystem::create_directory(outputDir);
     std::filesystem::create_directory(outputDir / "vorticity");
     std::filesystem::create_directory(outputDir / "current");
-    std::filesystem::create_directory(outputDir / "streamFunction");
-    std::filesystem::create_directory(outputDir / "magneticPotential");
+    std::filesystem::create_directory(outputDir / "stream");
+    std::filesystem::create_directory(outputDir / "potential");
 
     return outputDir.string();
 }

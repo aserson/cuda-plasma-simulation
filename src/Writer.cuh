@@ -5,16 +5,15 @@
 #include <fstream>
 #include <sstream>
 
-#include "Helper.cuh"
 #include "KernelCaller.cuh"
 
-enum FieldType { Vorticity, Current, StreamFunction, MagneticPotential };
+enum FieldType { Vorticity = 0, Current, Stream, Potential };
+
+namespace mhd {
 
 class Writer {
-   private:
-    double* _output;
-    unsigned int _gridLength;
-    unsigned int _outputSize;
+private:
+    CpuDoubleBuffer _output;
 
     std::string uintToStr(unsigned int value) {
         std::ostringstream output;
@@ -34,35 +33,15 @@ class Writer {
         CUDA_CALL(cudaPointerGetAttributes(&attributes, field));
 
         if (attributes.type == cudaMemoryTypeDevice) {
-            CUDA_CALL(cudaMemcpy(_output, field, _outputSize,
+            CUDA_CALL(cudaMemcpy(_output.data(), field, _output.size(),
                                  cudaMemcpyDeviceToHost));
             return true;
-        } else {
-            CUDA_CALL(
-                cudaMemcpy(_output, field, _outputSize, cudaMemcpyHostToHost));
+        } else if (attributes.type == cudaMemoryTypeHost) {
+            CUDA_CALL(cudaMemcpy(_output.data(), field, _output.size(),
+                                 cudaMemcpyHostToHost));
             return true;
-        }
-
-        return false;
-    }
-
-   public:
-    Writer() {
-        _gridLength = mhd::parameters::SimulationParameters::gridLength;
-        _outputSize = _gridLength * _gridLength * sizeof(double);
-        CUDA_CALL(
-            cudaHostAlloc((void**)&_output, _outputSize, cudaHostAllocDefault));
-    }
-
-    Writer(unsigned int girdLength) : _gridLength(girdLength) {
-        _outputSize = _gridLength * _gridLength * sizeof(double);
-        CUDA_CALL(
-            cudaHostAlloc((void**)&_output, _outputSize, cudaHostAllocDefault));
-    }
-
-    ~Writer() {
-        if (_output != nullptr) {
-            CUDA_CALL(cudaFreeHost(_output));
+        } else {
+            return false;
         }
     }
 
@@ -70,16 +49,21 @@ class Writer {
         memcpy(field);
 
         std::ofstream fData(filePath, std::ios::binary | std::ios::out);
-        fData.write((char*)_output, _outputSize);
+        fData.write((char*)(_output.data()), _output.size());
         fData.close();
     }
 
+    void clear() { memset(_output.data(), 0x0, _output.size()); }
+
+public:
+    Writer() : _output(mhd::parameters::SimulationParameters::gridLength) {}
+
+    Writer(unsigned int gridLength) : _output(gridLength) {}
+
     template <FieldType Type>
-    void saveField(const GpuComplexBuffer& field,
+    void saveField(const GpuDoubleBuffer& field,
                    const std::filesystem::path& outputDir,
-                   const mhd::FastFourierTransformator& transformator,
-                   AuxiliaryFields& aux,
-                   const mhd::parameters::CurrentParameters& params) {
+                   unsigned int outputNumber) {
         unsigned int gridLength =
             mhd::parameters::SimulationParameters::gridLength;
         double lambda = mhd::parameters::SimulationParameters::lambda;
@@ -88,30 +72,26 @@ class Writer {
 
         switch (Type) {
             case Vorticity:
-                filePath = outputDir / "vorticity" /
-                           ("out" + uintToStr(params.stepNumberOut));
+                filePath =
+                    outputDir / "vorticity" / ("out" + uintToStr(outputNumber));
                 break;
             case Current:
-                filePath = outputDir / "current" /
-                           ("out" + uintToStr(params.stepNumberOut));
+                filePath =
+                    outputDir / "current" / ("out" + uintToStr(outputNumber));
                 break;
-            case StreamFunction:
-                filePath = outputDir / "streamFunction" /
-                           ("out" + uintToStr(params.stepNumberOut));
+            case Stream:
+                filePath =
+                    outputDir / "stream" / ("out" + uintToStr(outputNumber));
                 break;
-            case MagneticPotential:
-                filePath = outputDir / "magneticPotential" /
-                           ("out" + uintToStr(params.stepNumberOut));
+            case Potential:
+                filePath =
+                    outputDir / "potential" / ("out" + uintToStr(outputNumber));
                 break;
             default:
                 break;
         }
 
-        CallKernel(MultComplex_kernel, field.data(), gridLength, lambda,
-                   aux._complexTmp.data());
-        transformator.inverse(aux._complexTmp, aux._doubleTmpA);
-
-        save(aux._doubleTmpA.data(), filePath);
+        save(field.data(), filePath);
     }
 
     void saveCurentParams(const mhd::parameters::CurrentParameters& params,
@@ -121,14 +101,14 @@ class Writer {
             ("out" + uintToStr(params.stepNumberOut) + ".yaml");
         std::ofstream fParams(filePath);
 
-        fParams << "time: " << params.time << std::endl
-                << "stepNumber: " << params.stepNumber << std::endl
-                << "kineticEnergy: " << params.kineticEnergy << std::endl
-                << "magneticEnergy: " << params.magneticEnergy << std::endl
-                << "fullEnergy: "
-                << params.kineticEnergy + params.magneticEnergy << std::endl
-                << "maxVelocityField: " << params.maxVelocityField << std::endl
-                << "naxMagnecitField: " << params.maxMagneticField << std::endl;
+        fParams << "T: " << params.time << std::endl
+                << "Nstep: " << params.stepNumber << std::endl
+                << "Ekin: " << params.kineticEnergy << std::endl
+                << "Emag: " << params.magneticEnergy << std::endl
+                << "E: " << params.kineticEnergy + params.magneticEnergy
+                << std::endl
+                << "Vmax: " << params.maxVelocityField << std::endl
+                << "Bnax: " << params.maxMagneticField << std::endl;
 
         fParams.close();
     }
@@ -143,8 +123,8 @@ class Writer {
         transformator.inverseFFT(tmpComplex.data(), tmpDouble.data());
 
         double lambda = mhd::parameters::SimulationParameters::lambda;
-        CallKernelFull(MultDouble_kernel, tmpDouble.data(), _gridLength, lambda,
-                       tmpDouble.data());
+        CallKernelFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
+                       lambda, tmpDouble.data());
 
         clear();
         memcpy(tmpDouble.data());
@@ -165,8 +145,8 @@ class Writer {
 
         double lambda =
             (IsNormalized) ? 1. : mhd::parameters::SimulationParameters::lambda;
-        CallKernelFull(MultDouble_kernel, tmpDouble.data(), _gridLength, lambda,
-                       tmpDouble.data());
+        CallKernelFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
+                       lambda, tmpDouble.data());
 
         clear();
         memcpy(tmpDouble.data());
@@ -178,10 +158,5 @@ class Writer {
 
         clear();
     }
-
-    void clear() {
-        if (_output != nullptr) {
-            memset(_output, 0x0, _outputSize);
-        }
-    }
 };
+}  // namespace mhd

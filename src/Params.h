@@ -15,11 +15,11 @@ struct EquationCoefficients {
 };
 
 struct InitialCondition {
-    static constexpr double initialKineticEnergy = 0.5;
-    static constexpr double initialMagneticEnergy = 0.5;
+    static constexpr double kineticEnergy = 0.5;
+    static constexpr double magneticEnergy = 0.5;
 
-    static const unsigned int averageWaveNumber = 10;
-    static const unsigned int halfwidthWaveNumber = 3;
+    static const unsigned int averageWN = 10;
+    //static const unsigned int halfwidthWN = 3;
 };
 
 struct SimulationParameters {
@@ -27,7 +27,7 @@ struct SimulationParameters {
     static constexpr double gridStep = 2. * M_PI / ((double)gridLength);
     static constexpr double lambda = 1. / ((double)(gridLength * gridLength));
 
-    static const unsigned int dealaliasingWaveNumber = gridLength / 3;
+    static const unsigned int dealaliasingWN = gridLength / 3;
 
     static constexpr double time = 0.1;
     static constexpr double cft = 0.2;
@@ -41,8 +41,8 @@ struct SimulationParameters {
 struct OutputParameters {
     static constexpr double stepTime = 0.01;
 
-    static constexpr double startTime = stepTime;
-    static constexpr double stopTime = stepTime + 999 * stepTime;
+    static constexpr double startTime = 0.0;
+    static constexpr double stopTime = stepTime + 1000 * stepTime;
 };
 
 struct KernelRunParameters {
@@ -71,7 +71,7 @@ struct CurrentParameters {
     double maxVelocityField;
     double maxMagneticField;
 
-    double timeOut = 0.0;
+    double timeOut = mhd::parameters::OutputParameters::startTime;
     unsigned int stepNumberOut = 0;
     double timeStepOut = mhd::parameters::OutputParameters::stepTime;
 };
@@ -80,8 +80,8 @@ void ParametersPrint() {
     unsigned int N = SimulationParameters::gridLength;
     double T = SimulationParameters::time;
 
-    double kineticEnergy = InitialCondition::initialKineticEnergy;
-    double magneticEnergy = InitialCondition::initialMagneticEnergy;
+    double kineticEnergy = InitialCondition::kineticEnergy;
+    double magneticEnergy = InitialCondition::magneticEnergy;
 
     double nu = EquationCoefficients::nu;
     double eta = EquationCoefficients::eta;
@@ -111,8 +111,8 @@ void ParametersSave(const std::filesystem::path& outputDir) {
     unsigned int N = SimulationParameters::gridLength;
     double T = SimulationParameters::time;
 
-    double kineticEnergy = InitialCondition::initialKineticEnergy;
-    double magneticEnergy = InitialCondition::initialMagneticEnergy;
+    double kineticEnergy = InitialCondition::kineticEnergy;
+    double magneticEnergy = InitialCondition::magneticEnergy;
 
     double nu = EquationCoefficients::nu;
     double eta = EquationCoefficients::eta;
