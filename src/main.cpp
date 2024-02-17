@@ -63,7 +63,6 @@ void main() {
         std::cout << "Simulation starts..." << std::endl;
         // Zero Data Output
         solver.saveData(outputDir);
-        solver.printCurrentParams();
 
         // Main Cycle of the Program
         while (solver.shouldContinue()) {
@@ -100,7 +99,6 @@ void main() {
             // Data Output
             solver.timeStep();
             solver.saveData(outputDir);
-            solver.printCurrentParams();
         }
     }
     counter.stop();

@@ -194,6 +194,8 @@ void Helper::saveData(const std::filesystem::path& outputDir) {
 
         _params.stepNumberOut++;
         _params.timeOut += _params.timeStepOut;
+
+        printCurrentParams();
     }
 }
 
@@ -209,13 +211,41 @@ void Helper::saveDataLite(const std::filesystem::path& outputDir) {
 
         _params.stepNumberOut++;
         _params.timeOut += _params.timeStepOut;
+
+        printCurrentParams();
     }
 }
 
 void Helper::printCurrentParams() {
-    printf("%f\t%d\t%f\t%f\t%f\t%f\n", _params.time, _params.stepNumber,
-           _params.timeStep, _params.kineticEnergy, _params.magneticEnergy,
-           _params.kineticEnergy + _params.magneticEnergy);
+    if (_params.stepNumber == 0) {
+        std::cout << std::left;
+        std::cout << std::setw(6) << "Step:";
+        std::cout << std::setw(6) << "Time:";
+        std::cout << std::right;
+        std::cout << std::setw(10) << "dTime:";
+        std::cout << std::setw(11) << "Ekin:";
+        std::cout << std::setw(12) << "Emag:";
+        std::cout << std::setw(12) << "Esum:";
+        std::cout << std::endl;
+
+        std::cout
+            << "_____________________________________________________________"
+            << std::endl;
+    }
+    std::cout << " ";
+    std::cout << std::left;
+    std::cout << std::setw(8) << _params.stepNumber;
+
+    std::cout << std::fixed << std::setprecision(2);
+
+    std::cout << std::setw(6) << _params.time;
+
+    std::cout << std::fixed << std::setprecision(4) << std::right;
+    std::cout << std::setw(10) << _params.timeStep;
+    std::cout << std::setw(12) << _params.kineticEnergy;
+    std::cout << std::setw(12) << _params.magneticEnergy;
+    std::cout << std::setw(12) << _params.kineticEnergy + _params.magneticEnergy
+              << std::endl;
 }
 
 bool Helper::shouldContinue() {

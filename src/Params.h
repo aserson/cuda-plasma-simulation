@@ -29,7 +29,7 @@ struct SimulationParameters {
 
     static const unsigned int dealaliasingWN = gridLength / 3;
 
-    static constexpr double time = 0.1;
+    static constexpr double time = 5.0;
     static constexpr double cft = 0.2;
     static constexpr double maxTimeStep = 0.01;
 
@@ -39,7 +39,7 @@ struct SimulationParameters {
 };
 
 struct OutputParameters {
-    static constexpr double stepTime = 1.0;
+    static constexpr double stepTime = 0.5;
 
     static constexpr double startTime = 0.0;
     static constexpr double stopTime = stepTime + 1000 * stepTime;
