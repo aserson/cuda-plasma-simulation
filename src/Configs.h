@@ -20,21 +20,14 @@ struct Currents {
     double maxVelocityField;
     double maxMagneticField;
 
-    double outputStep;
-    double outputTime;
-    unsigned int outputNumber;
-
-    Currents(double initialOutputStep, double initialOutputTime)
+    Currents()
         : time(0.),
           timeStep(0.),
           stepNumber(0),
           kineticEnergy(0.),
           magneticEnergy(0.),
           maxVelocityField(0.),
-          maxMagneticField(0.),
-          outputStep(initialOutputStep),
-          outputTime(initialOutputTime),
-          outputNumber(0) {}
+          maxMagneticField(0.) {}
 };
 
 class Configs {
@@ -59,12 +52,19 @@ private:
         // OutputParameters
         static constexpr double defaultOutputStep = 0.1;
         static constexpr double defaultOutputStart = 0.0;
-        static const unsigned int defaultMaxOutputs = 100;
+        static const unsigned int defaultMaxOutputs = 1000;
 
         // KernelRunParameters
         static const unsigned int defaultDimBlockX = 32;
         static const unsigned int defaultDimBlockY = 16;
         static const unsigned int defaultSharedLength = 128;
+
+        // WriterSettings
+        static const bool defaultSaveVorticity = false;
+        static const bool defaultSaveCurrent = false;
+        static const bool defaultSaveStream = true;
+        static const bool defaultSavePotential = true;
+        static const bool defaultSavePNG = true;
     };
 
     std::filesystem::path _filePath;
@@ -95,6 +95,13 @@ private:
     unsigned int getDimBlockX();
     unsigned int getDimBlockY();
     unsigned int getSharedLength();
+
+    // Writer Settings
+    bool getSaveVorticity();
+    bool getSaveCurrent();
+    bool getSaveStream();
+    bool getSavePotential();
+    bool getSavePNG();
 
 public:
     Configs(const std::filesystem::path& filePath);
@@ -130,5 +137,12 @@ public:
     unsigned int _dimBlockY;
     unsigned int _sharedLength;
     unsigned int _linearLength;
+
+    // WriterSettings
+    bool _saveVorticity;
+    bool _saveCurrent;
+    bool _saveStream;
+    bool _savePotential;
+    bool _savePNG;
 };
 }  // namespace mhd

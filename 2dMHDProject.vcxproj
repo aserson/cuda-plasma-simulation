@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\graphics\fpng.h" />
+    <ClInclude Include="src\graphics\Painter.h" />
     <ClInclude Include="src\Configs.h" />
     <ClInclude Include="src\cuda\Buffers.cuh" />
     <ClInclude Include="src\cuda\FastFourierTransformator.cuh" />
@@ -19,9 +21,11 @@
     <ClInclude Include="src\cuda\KernelCaller.cuh" />
     <ClInclude Include="src\cuda\Solver.cuh" />
     <ClInclude Include="src\cuda\SolverKernels.cuh" />
-    <ClInclude Include="src\cuda\Writer.cuh" />
+    <ClInclude Include="src\Writer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\graphics\fpng.cpp" />
+    <ClCompile Include="src\graphics\Painter.cpp" />
     <ClCompile Include="src\Configs.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
@@ -30,7 +34,7 @@
     <CudaCompile Include="src\cuda\FastFourierTransformator.cu" />
     <CudaCompile Include="src\cuda\Helper.cu" />
     <CudaCompile Include="src\cuda\Solver.cu" />
-    <CudaCompile Include="src\cuda\Writer.cu" />
+    <CudaCompile Include="src\Writer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="configs\standart1024.yaml" />
@@ -99,6 +103,10 @@
     <CudaLink>
       <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" %(AdditionalOptions)</AdditionalOptions>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -116,7 +124,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>cufft.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\yaml-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\yaml-cpp\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
@@ -127,6 +135,10 @@
     <CudaLink>
       <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" %(AdditionalOptions)</AdditionalOptions>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

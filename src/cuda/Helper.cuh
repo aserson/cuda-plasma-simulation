@@ -7,7 +7,6 @@
 #include "Buffers.cuh"
 #include "FastFourierTransformator.cuh"
 #include "KernelCaller.cuh"
-#include "Writer.cuh"
 
 namespace mhd {
 class Helper {
@@ -17,7 +16,6 @@ protected:
 
     // Auxiliary classes
     FastFourierTransformator _transformator;
-    Writer _writer;
     KernelCaller _caller;
 
     struct Fields {
@@ -100,23 +98,6 @@ public:
     CpuDoubleBuffer1D& CpuLinearBufferY();
     CpuDoubleBuffer2D& Output();
 
-    const GpuComplexBuffer2D& Vorticity() const;
-    const GpuComplexBuffer2D& Stream() const;
-    const GpuComplexBuffer2D& Current() const;
-    const GpuComplexBuffer2D& Potential() const;
-    const GpuComplexBuffer2D& OldVorticity() const;
-    const GpuComplexBuffer2D& OldPotential() const;
-    const GpuComplexBuffer2D& RightPart() const;
-    const GpuComplexBuffer2D& ComplexBuffer() const;
-    const GpuDoubleBuffer2D& DoubleBufferA() const;
-    const GpuDoubleBuffer2D& DoubleBufferB() const;
-    const GpuDoubleBuffer2D& DoubleBufferC() const;
-    const CpuDoubleBuffer1D& CpuLinearBufferX() const;
-    const CpuDoubleBuffer1D& CpuLinearBufferY() const;
-    const CpuDoubleBuffer2D& Output() const;
-
-    void saveData(const std::filesystem::path& outputDir);
-    void saveDataLite(const std::filesystem::path& outputDir);
     void printCurrents();
 
     bool shouldContinue();

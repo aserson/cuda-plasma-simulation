@@ -66,9 +66,7 @@ Helper::Helper(const Configs& configs)
       _transformator(configs._gridLength),
       _fields(configs._gridLength, configs._linearLength),
       _caller(configs._gridLength, configs._dimBlockX, configs._dimBlockY,
-              configs._sharedLength),
-      _writer(configs._gridLength),
-      _currents(configs._outputStep, configs._outputStart) {}
+              configs._sharedLength) {}
 
 const GpuDoubleBuffer2D& Helper::getVorticity() {
     _caller.call(MultComplex_kernel, Vorticity().data(), Vorticity().length(),
@@ -154,62 +152,6 @@ CpuDoubleBuffer2D& Helper::Output() {
     return _fields._output;
 }
 
-const GpuComplexBuffer2D& Helper::Vorticity() const {
-    return _fields._vorticity;
-}
-
-const GpuComplexBuffer2D& Helper::Stream() const {
-    return _fields._stream;
-}
-
-const GpuComplexBuffer2D& Helper::Current() const {
-    return _fields._current;
-}
-
-const GpuComplexBuffer2D& Helper::Potential() const {
-    return _fields._potential;
-}
-
-const GpuComplexBuffer2D& Helper::OldVorticity() const {
-    return _fields._oldVorticity;
-}
-
-const GpuComplexBuffer2D& Helper::OldPotential() const {
-    return _fields._oldPotential;
-}
-
-const GpuComplexBuffer2D& Helper::RightPart() const {
-    return _fields._rightPart;
-}
-
-const GpuComplexBuffer2D& Helper::ComplexBuffer() const {
-    return _fields._complexBuffer;
-}
-
-const GpuDoubleBuffer2D& Helper::DoubleBufferA() const {
-    return _fields._doubleBufferA;
-}
-
-const GpuDoubleBuffer2D& Helper::DoubleBufferB() const {
-    return _fields._doubleBufferB;
-}
-
-const GpuDoubleBuffer2D& Helper::DoubleBufferC() const {
-    return _fields._doubleBufferC;
-}
-
-const CpuDoubleBuffer1D& Helper::CpuLinearBufferX() const {
-    return _fields._cpuLinearBufferX;
-}
-
-const CpuDoubleBuffer1D& Helper::CpuLinearBufferY() const {
-    return _fields._cpuLinearBufferY;
-}
-
-const CpuDoubleBuffer2D& Helper::Output() const {
-    return _fields._output;
-}
-
 void Helper::updateEnergies() {
     _currents.kineticEnergy = calcEnergy(Stream());
     _currents.magneticEnergy = calcEnergy(Potential());
@@ -280,77 +222,6 @@ void Helper::fillNormally(unsigned long seed, int offset) {
     ratio = (energy > 0) ? std::sqrt(_configs._magneticEnergy / energy) : 1.;
     normallize(Potential(), ratio);
     updateCurrent();
-}
-
-void Helper::saveData(const std::filesystem::path& outputDir) {
-    if ((_currents.time >= _currents.outputTime) &&
-        (_currents.time <= _configs._outputStop)) {
-        _writer.saveVorticity(getVorticity().data(), outputDir,
-                              _currents.outputNumber);
-        _writer.saveCurrent(getCurrent().data(), outputDir,
-                            _currents.outputNumber);
-        _writer.saveStream(getStream().data(), outputDir,
-                           _currents.outputNumber);
-        _writer.savePotential(getPotential().data(), outputDir,
-                              _currents.outputNumber);
-
-        _writer.saveCurrents(_currents, outputDir, _currents.outputNumber);
-
-        _currents.outputNumber++;
-        _currents.outputTime += _currents.outputStep;
-
-        printCurrents();
-    }
-}
-
-void Helper::saveDataLite(const std::filesystem::path& outputDir) {
-    if ((_currents.time >= _currents.outputTime) &&
-        (_currents.time < _configs._outputStop)) {
-        _writer.saveStream(getStream().data(), outputDir,
-                           _currents.outputNumber);
-        _writer.savePotential(getPotential().data(), outputDir,
-                              _currents.outputNumber);
-
-        _writer.saveCurrents(_currents, outputDir, _currents.outputNumber);
-
-        _currents.outputNumber++;
-        _currents.outputTime += _currents.outputStep;
-
-        printCurrents();
-    }
-}
-
-void Helper::printCurrents() {
-    if (_currents.stepNumber == 0) {
-        std::cout << std::left;
-        std::cout << std::setw(6) << "Step:";
-        std::cout << std::setw(6) << "Time:";
-        std::cout << std::right;
-        std::cout << std::setw(10) << "dTime:";
-        std::cout << std::setw(11) << "Ekin:";
-        std::cout << std::setw(12) << "Emag:";
-        std::cout << std::setw(12) << "Esum:";
-        std::cout << std::endl;
-
-        std::cout
-            << "_____________________________________________________________"
-            << std::endl;
-    }
-    std::cout << " ";
-    std::cout << std::left;
-    std::cout << std::setw(8) << _currents.stepNumber;
-
-    std::cout << std::fixed << std::setprecision(2);
-
-    std::cout << std::setw(6) << _currents.time;
-
-    std::cout << std::fixed << std::setprecision(4) << std::right;
-    std::cout << std::setw(10) << _currents.timeStep;
-    std::cout << std::setw(12) << _currents.kineticEnergy;
-    std::cout << std::setw(12) << _currents.magneticEnergy;
-    std::cout << std::setw(12)
-              << _currents.kineticEnergy + _currents.magneticEnergy
-              << std::endl;
 }
 
 bool Helper::shouldContinue() {

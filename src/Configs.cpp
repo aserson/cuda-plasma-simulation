@@ -36,6 +36,12 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _dimBlockY = getDimBlockY();
     _sharedLength = getSharedLength();
     _linearLength = _gridLength * _gridLength / _sharedLength;
+
+    _saveVorticity = getSaveVorticity();
+    _saveCurrent = getSaveCurrent();
+    _saveStream = getSaveStream();
+    _savePotential = getSavePotential();
+    _savePNG = getSavePNG();
 }
 
 std::string Configs::ParametersPrint() const {
@@ -213,4 +219,45 @@ unsigned int Configs::getSharedLength() {
         return DefaultConfigs::defaultSharedLength;
     }
 }
+
+bool Configs::getSaveVorticity() {
+    if (_config["SaveVorticity"]) {
+        return _config["SaveVorticity"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSaveVorticity;
+    }
+}
+
+bool Configs::getSaveCurrent() {
+    if (_config["SaveCurrent"]) {
+        return _config["SaveCurrent"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSaveCurrent;
+    }
+}
+
+bool Configs::getSaveStream() {
+    if (_config["SaveStream"]) {
+        return _config["SaveStream"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSaveStream;
+    }
+}
+
+bool Configs::getSavePotential() {
+    if (_config["SavePotential"]) {
+        return _config["SavePotential"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSavePotential;
+    }
+}
+
+bool Configs::getSavePNG() {
+    if (_config["SavePNG"]) {
+        return _config["SavePNG"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSavePNG;
+    }
+}
+
 }  // namespace mhd

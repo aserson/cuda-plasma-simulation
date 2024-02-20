@@ -6,9 +6,13 @@
 #include <string>
 
 #include "Configs.h"
+#include "Writer.h"
 #include "cuda/Solver.cuh"
+#include "graphics/Painter.h"
 
-std::filesystem::path CreateOutputDir(const std::filesystem::path& parentDir) {
+std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
+    std::filesystem::path parentDir = "outputs";
+
     if (std::filesystem::exists(parentDir) == false)
         std::filesystem::create_directory(parentDir);
 
@@ -21,6 +25,17 @@ std::filesystem::path CreateOutputDir(const std::filesystem::path& parentDir) {
     auto outputDir = parentDir / currenTimeStream.str();
 
     std::filesystem::create_directory(outputDir);
+
+    if (configs._savePNG) {
+        if (configs._saveVorticity)
+            std::filesystem::create_directory(outputDir / "vorticityPNG");
+        if (configs._saveCurrent)
+            std::filesystem::create_directory(outputDir / "currentPNG");
+        if (configs._saveStream)
+            std::filesystem::create_directory(outputDir / "streamPNG");
+        if (configs._savePotential)
+            std::filesystem::create_directory(outputDir / "potentialPNG");
+    }
 
     return outputDir;
 }
@@ -36,7 +51,7 @@ void main() {
 
     std::cout << "Creating output directory... " << std::endl;
 
-    const std::filesystem::path outputDir = CreateOutputDir("outputs");
+    const std::filesystem::path outputDir = CreateOutputDir(configs);
 
     std::cout << "Output directory: " << outputDir << std::endl << std::endl;
 
@@ -44,6 +59,12 @@ void main() {
 
     std::cout << configs.ParametersPrint();
     configs.ParametersSave(outputDir);
+
+    std::cout << "Creating writer..." << std::endl;
+    mhd::Writer writer(outputDir, configs);
+
+    std::cout << "Creating painter..." << std::endl;
+    graphics::Painter painter(configs._gridLength, "plasma");
 
     mhd::CudaTimeCounter counter;
 
@@ -61,7 +82,7 @@ void main() {
         std::cout << "Simulation starts..." << std::endl;
 
         // Initial Data Output
-        solver.saveDataLite(outputDir);
+        writer.saveData(solver, painter);
 
         // Main Cycle of the Program
         while (solver.shouldContinue()) {
@@ -97,7 +118,7 @@ void main() {
             solver.timeStep();
 
             // Data Output
-            solver.saveDataLite(outputDir);
+            writer.saveData(solver, painter);
         }
     }
     counter.stop();
