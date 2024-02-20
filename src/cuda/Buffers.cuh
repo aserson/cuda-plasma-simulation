@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cufft.h>
+#include <curand_kernel.h>
 
 namespace mhd {
 class CpuDoubleBuffer1D {
@@ -99,5 +100,23 @@ public:
     void copyFromHost(const cufftDoubleComplex* src);
     void copyToDevice(cufftDoubleComplex* dst) const;
     void copyFromDevice(const cufftDoubleComplex* src);
+};
+
+class GpuStateBuffer2D {
+private:
+    curandState* _buffer;
+    unsigned int _sideLength;
+    unsigned int _bufferSize;
+
+public:
+    GpuStateBuffer2D();
+    GpuStateBuffer2D(unsigned int sideLength);
+    ~GpuStateBuffer2D();
+
+    curandState* data();
+    const curandState* data() const;
+
+    unsigned int size() const;
+    unsigned int length() const;
 };
 }  // namespace mhd

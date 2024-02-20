@@ -3,13 +3,12 @@
 #include <filesystem>
 #include <string>
 
-#include "../params.h"
+#include "../Configs.h"
 
 #include "Buffers.cuh"
 
-enum FieldType { Vorticity = 0, Current, Stream, Potential };
-
 namespace mhd {
+class KernelCaller;
 
 class Writer {
 private:
@@ -21,20 +20,26 @@ private:
     void clear();
 
 public:
-    Writer();
     Writer(unsigned int gridLength);
 
-    template <FieldType Type>
-    void saveField(const GpuDoubleBuffer2D& field,
-                   const std::filesystem::path& outputDir,
-                   unsigned int outputNumber);
-    void saveCurentParams(const mhd::parameters::CurrentParameters& params,
-                          const std::filesystem::path& outputDir);
+    void saveVorticity(const double* buffer,
+                       const std::filesystem::path& outputDir,
+                       unsigned int outputNumber);
 
-    void printField(const GpuComplexBuffer2D& field,
-                    const std::string& message = "");
-    template <bool IsNormalized = false>
-    void printField(const GpuDoubleBuffer2D& field,
-                    const std::string& message = "");
+    void saveCurrent(const double* buffer,
+                     const std::filesystem::path& outputDir,
+                     unsigned int outputNumber);
+
+    void saveStream(const double* buffer,
+                    const std::filesystem::path& outputDir,
+                    unsigned int outputNumber);
+
+    void savePotential(const double* buffer,
+                       const std::filesystem::path& outputDir,
+                       unsigned int outputNumber);
+
+    void saveCurrents(const Currents& currents,
+                      const std::filesystem::path& outputDir,
+                      unsigned int outputNumber);
 };
 }  // namespace mhd

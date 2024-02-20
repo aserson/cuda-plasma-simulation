@@ -1,15 +1,18 @@
 ﻿#pragma once
 
+#include "../Configs.h"
 #include "Buffers.cuh"
 #include "Helper.cuh"
 
 namespace mhd {
-class Solver : public mhd::Helper {
+class Solver : public Helper {
 private:
     void calcJacobian(const GpuComplexBuffer2D& leftField,
                       const GpuComplexBuffer2D& rightField);
 
 public:
+    Solver(const mhd::Configs& configs);
+
     void calcKineticRigthPart();
     void calcMagneticRightPart();
 

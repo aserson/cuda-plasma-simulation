@@ -1,13 +1,11 @@
-#include <iostream>
-
 #include <ctime>
 #include <filesystem>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 
-#include "params.h"
-
+#include "Configs.h"
 #include "cuda/Solver.cuh"
 
 std::filesystem::path CreateOutputDir(const std::filesystem::path& parentDir) {
@@ -23,10 +21,6 @@ std::filesystem::path CreateOutputDir(const std::filesystem::path& parentDir) {
     auto outputDir = parentDir / currenTimeStream.str();
 
     std::filesystem::create_directory(outputDir);
-    std::filesystem::create_directory(outputDir / "vorticity");
-    std::filesystem::create_directory(outputDir / "current");
-    std::filesystem::create_directory(outputDir / "stream");
-    std::filesystem::create_directory(outputDir / "potential");
 
     return outputDir;
 }
@@ -36,6 +30,10 @@ void main() {
               << std::endl
               << std::endl;
 
+    std::cout << "Reading configurations file... " << std::endl;
+
+    mhd::Configs configs("configs/standart1024.yaml");
+
     std::cout << "Creating output directory... " << std::endl;
 
     const std::filesystem::path outputDir = CreateOutputDir("outputs");
@@ -44,14 +42,14 @@ void main() {
 
     std::cout << "Printing parameters..." << std::endl;
 
-    std::cout << mhd::parameters::ParametersPrint();
-    mhd::parameters::ParametersSave(outputDir);
+    std::cout << configs.ParametersPrint();
+    configs.ParametersSave(outputDir);
 
     mhd::CudaTimeCounter counter;
 
     counter.start();
     {
-        mhd::Solver solver;
+        mhd::Solver solver(configs);
 
         // Initial Conditions
         solver.fillNormally(std::time(nullptr));
@@ -61,8 +59,9 @@ void main() {
         solver.updateTimeStep();
 
         std::cout << "Simulation starts..." << std::endl;
-        // Zero Data Output
-        solver.saveData(outputDir);
+
+        // Initial Data Output
+        solver.saveDataLite(outputDir);
 
         // Main Cycle of the Program
         while (solver.shouldContinue()) {
@@ -95,10 +94,10 @@ void main() {
             // Update Parameters (Energy and Time Step)
             solver.updateEnergies();
             solver.updateTimeStep();
+            solver.timeStep();
 
             // Data Output
-            solver.timeStep();
-            solver.saveData(outputDir);
+            solver.saveDataLite(outputDir);
         }
     }
     counter.stop();

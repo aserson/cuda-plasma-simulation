@@ -2,7 +2,7 @@
 
 #include "cuda_runtime.h"
 
-#include "../params.h"
+#include <iostream>
 
 #define CUDA_CALL(result) \
     checkCudaError(result, __FUNCTION__, __FILE__, __LINE__)
@@ -16,57 +16,89 @@ inline void checkCudaError(cudaError_t result, const std::string& functionName,
     }
 }
 
-enum GridType { Half, Full, Linear };
+inline void printFunctionName(const char* functionName) {
+    std::cout << "Running cuda kernel " << functionName << "..." << std::endl;
+}
+
+inline void checkCudaKernelError() {
+    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaDeviceSynchronize());
+}
+
+namespace mhd {
 
 class KernelCaller {
 private:
-    // One-dimensional grid
-    static const unsigned int dimBlockLinear =
-        mhd::parameters::KernelRunParameters::blockSizeLinear;
-    static const unsigned int dimGridLinear =
-        mhd::parameters::KernelRunParameters::gridSizeLinear;
-
     // Two-dimensional grid
-    static const unsigned int dimBlockX =
-        mhd::parameters::KernelRunParameters::blockSizeX;
-    static const unsigned int dimBlockY =
-        mhd::parameters::KernelRunParameters::blockSizeY;
+    unsigned int _dimBlockX;
+    unsigned int _dimBlockY;
+    unsigned int _dimGridX;
+    unsigned int _dimGridY;
 
-    static const unsigned int dimGridX =
-        mhd::parameters::KernelRunParameters::gridSizeX;
-    static const unsigned int dimGridY =
-        mhd::parameters::KernelRunParameters::gridSizeY;
+    // One-dimensional grid
+    unsigned int _dimBlockLinear;
+    unsigned int _dimGridLinear;
+    size_t _sharedSize;
 
 public:
-    template <GridType Type, typename Kernel, typename... TArgs>
-    static void call(Kernel kernel, TArgs... args) {
-        dim3 dimBlock;
-        dim3 dimGrid;
+    KernelCaller(unsigned int gridLength, unsigned int dimBlockX,
+                 unsigned int dimBlockY, unsigned int sharedLength) {
+        _dimBlockX = dimBlockX;
+        _dimBlockY = dimBlockY;
+        _dimGridX = gridLength / dimBlockX;
+        _dimGridY = gridLength / dimBlockY;
 
-        switch (Type) {
-            case Half:
-                dimBlock = dim3(dimBlockX, dimBlockY, 1);
-                dimGrid = dim3(dimGridX, dimGridY / 2, 1);
-                break;
-            case Full:
-                dimBlock = dim3(dimBlockX, dimBlockY, 1);
-                dimGrid = dim3(dimGridX, dimGridY, 1);
-                break;
-            case Linear:
-                dimBlock = dim3(dimBlockLinear, 1, 1);
-                dimGrid = dim3(dimGridLinear, 1, 1);
-                break;
-        }
-
-        kernel<<<dimGrid, dimBlock>>>(args...);
-
-#ifdef DEBUG
-        CUDA_CALL(cudaGetLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
-#endif  // DEBUG
+        _dimBlockLinear = sharedLength;
+        _dimGridLinear = gridLength * gridLength / sharedLength;
+        _sharedSize = sharedLength * sizeof(double);
     }
+
+    template <typename Kernel, typename... TArgs>
+    void call(Kernel kernel, TArgs... args);
+
+    template <typename Kernel, typename... TArgs>
+    void callFull(Kernel kernel, TArgs... args);
+
+    template <typename Kernel, typename... TArgs>
+    void callLinear(Kernel kernel, TArgs... args);
 };
 
-#define CallKernel KernelCaller::call<Half>
-#define CallKernelFull KernelCaller::call<Full>
-#define CallKernelLinear KernelCaller::call<Linear>
+template <typename Kernel, typename... TArgs>
+void KernelCaller::call(Kernel kernel, TArgs... args) {
+    dim3 dimBlock = dim3(_dimBlockX, _dimBlockY, 1);
+    dim3 dimGrid = dim3(_dimGridX, _dimGridY / 2, 1);
+    size_t sharedSize = 0;
+
+#ifdef __CUDACC__
+    kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
+    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaDeviceSynchronize());
+#endif  // __CUDACC__
+}
+
+template <typename Kernel, typename... TArgs>
+void KernelCaller::callFull(Kernel kernel, TArgs... args) {
+    dim3 dimBlock = dim3(_dimBlockX, _dimBlockY, 1);
+    dim3 dimGrid = dim3(_dimGridX, _dimGridY, 1);
+    size_t sharedSize = 0;
+
+#ifdef __CUDACC__
+    kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
+    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaDeviceSynchronize());
+#endif  // __CUDACC__
+}
+
+template <typename Kernel, typename... TArgs>
+void KernelCaller::callLinear(Kernel kernel, TArgs... args) {
+    dim3 dimGrid = dim3(_dimGridLinear, 1, 1);
+    dim3 dimBlock = dim3(_dimBlockLinear, 1, 1);
+    size_t sharedSize = _sharedSize;
+
+#ifdef __CUDACC__
+    kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
+    CUDA_CALL(cudaGetLastError());
+    CUDA_CALL(cudaDeviceSynchronize());
+#endif  // __CUDACC__
+}
+}  // namespace mhd

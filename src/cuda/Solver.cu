@@ -1,64 +1,74 @@
 #include "Solver.cuh"
 
-#include "KernelCaller.cuh"
 #include "SolverKernels.cuh"
 
 namespace mhd {
 
 void Solver::calcJacobian(const GpuComplexBuffer2D& leftField,
                           const GpuComplexBuffer2D& rightField) {
-    CallKernel(DealaliasingDiffByX_kernel, leftField.data(),
-               _complexBuffer.data());
-    _transformator.inverse(_complexBuffer, _doubleBufferA);
+    _caller.call(DealaliasingDiffByX_kernel, leftField.data(),
+                 ComplexBuffer().data(), _configs._gridLength,
+                 _configs._dealWN);
+    _transformator.inverse(ComplexBuffer(), DoubleBufferA());
 
-    CallKernel(DealaliasingDiffByY_kernel, rightField.data(),
-               _complexBuffer.data());
-    _transformator.inverse(_complexBuffer, _doubleBufferB);
+    _caller.call(DealaliasingDiffByY_kernel, rightField.data(),
+                 ComplexBuffer().data(), _configs._gridLength,
+                 _configs._dealWN);
+    _transformator.inverse(ComplexBuffer(), DoubleBufferB());
 
-    CallKernelFull(JacobianFirstPart_kernel, _doubleBufferA.data(),
-                   _doubleBufferB.data(), _doubleBufferC.data());
+    _caller.callFull(JacobianFirstPart_kernel, DoubleBufferA().data(),
+                     DoubleBufferB().data(), DoubleBufferC().data(),
+                     _configs._gridLength, _configs._lambda);
 
-    CallKernel(DealaliasingDiffByY_kernel, leftField.data(),
-               _complexBuffer.data());
-    _transformator.inverse(_complexBuffer, _doubleBufferA);
+    _caller.call(DealaliasingDiffByY_kernel, leftField.data(),
+                 ComplexBuffer().data(), _configs._gridLength,
+                 _configs._dealWN);
+    _transformator.inverse(ComplexBuffer(), DoubleBufferA());
 
-    CallKernel(DealaliasingDiffByX_kernel, rightField.data(),
-               _complexBuffer.data());
-    _transformator.inverse(_complexBuffer, _doubleBufferB);
+    _caller.call(DealaliasingDiffByX_kernel, rightField.data(),
+                 ComplexBuffer().data(), _configs._gridLength,
+                 _configs._dealWN);
+    _transformator.inverse(ComplexBuffer(), DoubleBufferB());
 
-    CallKernelFull(JacobianSecondPart_kernel, _doubleBufferA.data(),
-                   _doubleBufferB.data(), _doubleBufferC.data());
+    _caller.callFull(JacobianSecondPart_kernel, DoubleBufferA().data(),
+                     DoubleBufferB().data(), DoubleBufferC().data(),
+                     _configs._gridLength, _configs._lambda);
 
-    _transformator.forward(_doubleBufferC, _complexBuffer);
-    CallKernel(Dealaliasing_kernel, _complexBuffer.data());
+    _transformator.forward(DoubleBufferC(), ComplexBuffer());
+    _caller.call(Dealaliasing_kernel, ComplexBuffer().data(),
+                 _configs._gridLength, _configs._dealWN);
 }
 
-void Solver::calcKineticRigthPart() {
-    calcJacobian(_stream, _vorticity);
-    CallKernel(FirstRigthPart_kernel, _vorticity.data(), _complexBuffer.data(),
-               _rightPart.data());
+Solver::Solver(const mhd::Configs& configs) : Helper(configs) {}
 
-    calcJacobian(_potential, _current);
-    CallKernel(SecondRigthPart_kernel, _complexBuffer.data(),
-               _rightPart.data());
+void Solver::calcKineticRigthPart() {
+    calcJacobian(Stream(), Vorticity());
+    _caller.call(FirstRigthPart_kernel, Vorticity().data(),
+                 ComplexBuffer().data(), RightPart().data(),
+                 _configs._gridLength, _configs._nu);
+
+    calcJacobian(Potential(), Current());
+    _caller.call(SecondRigthPart_kernel, ComplexBuffer().data(),
+                 RightPart().data(), _configs._gridLength);
 }
 
 void Solver::calcMagneticRightPart() {
-    calcJacobian(_stream, _potential);
-    CallKernel(ThirdRigthPart_kernel, _potential.data(), _complexBuffer.data(),
-               _rightPart.data());
+    calcJacobian(Stream(), Potential());
+    _caller.call(ThirdRigthPart_kernel, Potential().data(),
+                 ComplexBuffer().data(), RightPart().data(),
+                 _configs._gridLength, _configs._eta);
 }
 
 void Solver::timeSchemeKin(double weight) {
-    CallKernel(TimeScheme_kernel, _vorticity.data(), _oldVorticity.data(),
-               _rightPart.data(), _vorticity.length(), _params.timeStep,
-               weight);
+    _caller.call(TimeScheme_kernel, Vorticity().data(), OldVorticity().data(),
+                 RightPart().data(), Vorticity().length(), _currents.timeStep,
+                 weight);
 }
 
 void Solver::timeSchemeMag(double weight) {
-    CallKernel(TimeScheme_kernel, _potential.data(), _oldPotential.data(),
-               _rightPart.data(), _potential.length(), _params.timeStep,
-               weight);
+    _caller.call(TimeScheme_kernel, Potential().data(), OldPotential().data(),
+                 RightPart().data(), Potential().length(), _currents.timeStep,
+                 weight);
 }
 
 };  // namespace mhd

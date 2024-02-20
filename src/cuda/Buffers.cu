@@ -23,18 +23,23 @@ CpuDoubleBuffer1D::~CpuDoubleBuffer1D() {
 double* CpuDoubleBuffer1D::data() {
     return _buffer;
 }
+
 const double* CpuDoubleBuffer1D::data() const {
     return _buffer;
 }
+
 double& CpuDoubleBuffer1D::operator[](unsigned int index) {
     return _buffer[index];
 }
+
 const double& CpuDoubleBuffer1D::operator[](unsigned int index) const {
     return _buffer[index];
 }
+
 unsigned int CpuDoubleBuffer1D::size() const {
     return _bufferSize;
 }
+
 unsigned int CpuDoubleBuffer1D::length() const {
     return _bufferLength;
 }
@@ -99,7 +104,13 @@ void CpuDoubleBuffer2D::copyToDevice(double* dst) const {
 }
 
 void CpuDoubleBuffer2D::copyFromDevice(const double* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+    if (src != nullptr) {
+        CUDA_CALL(
+            cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+    } else {
+        std::cerr << "Copying Error from device: Source buffer is nullptr!"
+                  << std::endl;
+    }
 }
 
 // GpuDoubleBuffer2D functions definitions
@@ -159,7 +170,8 @@ GpuComplexBuffer2D::GpuComplexBuffer2D()
 
 GpuComplexBuffer2D::GpuComplexBuffer2D(unsigned int sideLength)
     : _sideLength(sideLength) {
-    _bufferSize = _sideLength * _sideLength * sizeof(cufftDoubleComplex);
+    _bufferSize =
+        (_sideLength / 2 + 1) * _sideLength * sizeof(cufftDoubleComplex);
 
     CUDA_CALL(cudaMalloc((void**)&_buffer, _bufferSize));
 }
@@ -203,4 +215,34 @@ void GpuComplexBuffer2D::copyToDevice(cufftDoubleComplex* dst) const {
 void GpuComplexBuffer2D::copyFromDevice(const cufftDoubleComplex* src) {
     CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToDevice));
 }
+
+// GpuStateBuffer2D functions definitions
+
+GpuStateBuffer2D::GpuStateBuffer2D()
+    : _buffer(nullptr), _sideLength(0), _bufferSize(0) {}
+
+GpuStateBuffer2D::GpuStateBuffer2D(unsigned int sideLength)
+    : _sideLength(sideLength) {
+    _bufferSize = (_sideLength / 2 + 1) * _sideLength * sizeof(curandState);
+
+    CUDA_CALL(cudaMalloc((void**)&_buffer, _bufferSize));
+}
+
+GpuStateBuffer2D::~GpuStateBuffer2D() {
+    CUDA_CALL(cudaFree(_buffer));
+}
+
+curandState* GpuStateBuffer2D::data() {
+    return _buffer;
+}
+const curandState* GpuStateBuffer2D::data() const {
+    return _buffer;
+}
+unsigned int GpuStateBuffer2D::size() const {
+    return _bufferSize;
+}
+unsigned int GpuStateBuffer2D::length() const {
+    return _sideLength;
+}
+
 }  // namespace mhd

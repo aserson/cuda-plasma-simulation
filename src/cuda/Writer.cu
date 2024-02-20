@@ -9,7 +9,6 @@
 #include "KernelCaller.cuh"
 
 namespace mhd {
-
 std::string Writer::uintToStr(unsigned int value) {
     std::ostringstream output;
     if (value < 10) {
@@ -52,117 +51,54 @@ void Writer::clear() {
     memset(_output.data(), 0x0, _output.size());
 }
 
-Writer::Writer() : _output(mhd::parameters::SimulationParameters::gridLength) {}
-
 Writer::Writer(unsigned int gridLength) : _output(gridLength) {}
 
-template <FieldType Type>
-void Writer::saveField(const GpuDoubleBuffer2D& field,
-                       const std::filesystem::path& outputDir,
-                       unsigned int outputNumber) {
-    unsigned int gridLength = mhd::parameters::SimulationParameters::gridLength;
-    double lambda = mhd::parameters::SimulationParameters::lambda;
-
-    std::filesystem::path filePath;
-
-    switch (Type) {
-        case Vorticity:
-            filePath =
-                outputDir / "vorticity" / ("out" + uintToStr(outputNumber));
-            break;
-        case Current:
-            filePath =
-                outputDir / "current" / ("out" + uintToStr(outputNumber));
-            break;
-        case Stream:
-            filePath = outputDir / "stream" / ("out" + uintToStr(outputNumber));
-            break;
-        case Potential:
-            filePath =
-                outputDir / "potential" / ("out" + uintToStr(outputNumber));
-            break;
-        default:
-            break;
-    }
-
-    save(field.data(), filePath);
+void Writer::saveVorticity(const double* buffer,
+                           const std::filesystem::path& outputDir,
+                           unsigned int outputNumber) {
+    std::filesystem::path filePath =
+        outputDir / (uintToStr(outputNumber) + "_vorticity");
+    save(buffer, filePath);
 }
 
-template void Writer::saveField<Vorticity>(
-    const GpuDoubleBuffer2D& field, const std::filesystem::path& outputDir,
-    unsigned int outputNumber);
-template void Writer::saveField<Current>(const GpuDoubleBuffer2D& field,
-                                         const std::filesystem::path& outputDir,
-                                         unsigned int outputNumber);
-template void Writer::saveField<Stream>(const GpuDoubleBuffer2D& field,
-                                        const std::filesystem::path& outputDir,
-                                        unsigned int outputNumber);
-template void Writer::saveField<Potential>(
-    const GpuDoubleBuffer2D& field, const std::filesystem::path& outputDir,
-    unsigned int outputNumber);
-
-void Writer::saveCurentParams(const mhd::parameters::CurrentParameters& params,
-                              const std::filesystem::path& outputDir) {
+void Writer::saveCurrent(const double* buffer,
+                         const std::filesystem::path& outputDir,
+                         unsigned int outputNumber) {
     std::filesystem::path filePath =
-        outputDir / "params" /
-        ("out" + uintToStr(params.stepNumberOut) + ".yaml");
+        outputDir / (uintToStr(outputNumber) + "_current");
+    save(buffer, filePath);
+}
+
+void Writer::saveStream(const double* buffer,
+                        const std::filesystem::path& outputDir,
+                        unsigned int outputNumber) {
+    std::filesystem::path filePath =
+        outputDir / (uintToStr(outputNumber) + "_stream");
+    save(buffer, filePath);
+}
+
+void Writer::savePotential(const double* buffer,
+                           const std::filesystem::path& outputDir,
+                           unsigned int outputNumber) {
+    std::filesystem::path filePath =
+        outputDir / (uintToStr(outputNumber) + "_potential");
+    save(buffer, filePath);
+}
+
+void Writer::saveCurrents(const Currents& currents,
+                          const std::filesystem::path& outputDir,
+                          unsigned int outputNumber) {
+    std::filesystem::path filePath =
+        outputDir / (uintToStr(outputNumber) + "_currents.yaml");
     std::ofstream fParams(filePath);
 
-    fParams << "T: " << params.time << std::endl
-            << "Nstep: " << params.stepNumber << std::endl
-            << "Ekin: " << params.kineticEnergy << std::endl
-            << "Emag: " << params.magneticEnergy << std::endl
-            << "E: " << params.kineticEnergy + params.magneticEnergy
-            << std::endl
-            << "Vmax: " << params.maxVelocityField << std::endl
-            << "Bnax: " << params.maxMagneticField << std::endl;
+    fParams << "T : " << currents.time << std::endl
+            << "Nstep : " << currents.stepNumber << std::endl
+            << "Ekin : " << currents.kineticEnergy << std::endl
+            << "Emag : " << currents.magneticEnergy << std::endl
+            << "Vmax : " << currents.maxVelocityField << std::endl
+            << "Bnax : " << currents.maxMagneticField << std::endl;
 
     fParams.close();
-}
-
-void Writer::printField(const GpuComplexBuffer2D& field,
-                        const std::string& message) {
-    GpuComplexBuffer2D tmpComplex(field.length());
-    tmpComplex.copyFromDevice(field.data());
-
-    GpuDoubleBuffer2D tmpDouble(field.length());
-    FastFourierTransformator transformator(field.length());
-    transformator.inverseFFT(tmpComplex.data(), tmpDouble.data());
-
-    double lambda = mhd::parameters::SimulationParameters::lambda;
-    CallKernelFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
-                   lambda, tmpDouble.data());
-
-    clear();
-    memcpy(tmpDouble.data());
-
-    std::cout << "Field " << message << ":	" << _output[0] << "	"
-              << _output[1] << "	" << _output[2] << "	" << _output[3]
-              << "	" << _output[4] << std::endl
-              << std::endl;
-
-    clear();
-}
-
-template <bool IsNormalized>
-void Writer::printField(const GpuDoubleBuffer2D& field,
-                        const std::string& message) {
-    GpuDoubleBuffer2D tmpDouble(field.length());
-    tmpDouble.copyFromDevice(field.data());
-
-    double lambda =
-        (IsNormalized) ? 1. : mhd::parameters::SimulationParameters::lambda;
-    CallKernelFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
-                   lambda, tmpDouble.data());
-
-    clear();
-    memcpy(tmpDouble.data());
-
-    std::cout << "Field " << message << ":	" << _output[0] << "	"
-              << _output[1] << "	" << _output[2] << "	" << _output[3]
-              << "	" << _output[4] << std::endl
-              << std::endl;
-
-    clear();
 }
 }  // namespace mhd

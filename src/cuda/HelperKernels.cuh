@@ -4,13 +4,12 @@
 #include <cufft.h>
 #include <curand_kernel.h>
 
-#include "../params.h"
+#define M_PI 3.141592653589793238462643
 
 namespace mhd {
 // Multiplication Kernels
-__global__ inline void MultDouble_kernel(const double* input,
-                                         unsigned int gridLength, double value,
-                                         double* output) {
+__global__ static void MultDouble_kernel(double* input, unsigned int gridLength,
+                                         double value, double* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int idx = gridLength * x + y;
@@ -18,7 +17,7 @@ __global__ inline void MultDouble_kernel(const double* input,
     output[idx] = input[idx] * value;
 }
 
-__global__ inline void MultComplex_kernel(const cufftDoubleComplex* input,
+__global__ static void MultComplex_kernel(const cufftDoubleComplex* input,
                                           unsigned int gridLength, double value,
                                           cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -30,7 +29,7 @@ __global__ inline void MultComplex_kernel(const cufftDoubleComplex* input,
 }
 
 // Differentiation Kernels
-__global__ inline void DiffByX_kernel(const cufftDoubleComplex* input,
+__global__ static void DiffByX_kernel(const cufftDoubleComplex* input,
                                       unsigned int gridLength,
                                       cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -45,7 +44,7 @@ __global__ inline void DiffByX_kernel(const cufftDoubleComplex* input,
     output[idx].y = (double)x * input[idx].x;
 }
 
-__global__ inline void DiffByY_kernel(const cufftDoubleComplex* input,
+__global__ static void DiffByY_kernel(const cufftDoubleComplex* input,
                                       unsigned int gridLength,
                                       cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -56,7 +55,7 @@ __global__ inline void DiffByY_kernel(const cufftDoubleComplex* input,
     output[idx].y = (double)y * input[idx].x;
 }
 
-__global__ inline void LaplasOperator_kernel(const cufftDoubleComplex* input,
+__global__ static void LaplasOperator_kernel(const cufftDoubleComplex* input,
                                              unsigned int gridLength,
                                              cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -72,7 +71,7 @@ __global__ inline void LaplasOperator_kernel(const cufftDoubleComplex* input,
     output[idx].y = value * input[idx].y;
 }
 
-__global__ inline void MinusLaplasOperator_kernel(
+__global__ static void MinusLaplasOperator_kernel(
     const cufftDoubleComplex* input, unsigned int gridLength,
     cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -88,7 +87,7 @@ __global__ inline void MinusLaplasOperator_kernel(
     output[idx].y = value * input[idx].y;
 }
 
-__global__ inline void InverseLaplasOperator_kernel(
+__global__ static void InverseLaplasOperator_kernel(
     const cufftDoubleComplex* input, unsigned int gridLength,
     cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -104,7 +103,7 @@ __global__ inline void InverseLaplasOperator_kernel(
     output[idx].y = value * input[idx].y;
 }
 
-__global__ inline void MinusInverseLaplasOperator_kernel(
+__global__ static void MinusInverseLaplasOperator_kernel(
     const cufftDoubleComplex* input, unsigned int gridLength,
     cufftDoubleComplex* output) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -121,33 +120,31 @@ __global__ inline void MinusInverseLaplasOperator_kernel(
 }
 
 // Shared Memory Kernels
-template <unsigned int SharedBufferLenhth>
-__global__ inline void Max_kernel(double* input, double* output) {
+__global__ static void Max_kernel(double* input, double* output) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    __shared__ double a[SharedBufferLenhth];
-    a[threadIdx.x] = fabs(input[idx]);
+    extern __shared__ double sharedBuffer[];
+    sharedBuffer[threadIdx.x] = fabs(input[idx]);
 
     __syncthreads();
 
     for (unsigned int i = 2; i < blockDim.x + 1; i = i * 2) {
         if (idx % i == 0) {
-            a[threadIdx.x] = (a[threadIdx.x + i / 2] > a[threadIdx.x])
-                                 ? a[threadIdx.x + i / 2]
-                                 : a[threadIdx.x];
+            sharedBuffer[threadIdx.x] =
+                (sharedBuffer[threadIdx.x + i / 2] > sharedBuffer[threadIdx.x])
+                    ? sharedBuffer[threadIdx.x + i / 2]
+                    : sharedBuffer[threadIdx.x];
         }
         __syncthreads();
     }
 
-    output[blockIdx.x] = a[0];
+    output[blockIdx.x] = sharedBuffer[0];
 }
 
-__global__ inline void EnergyTransform_kernel(double* velocityX,
-                                              double* velocityY,
-                                              double* energy) {
-    unsigned int gridLength = mhd::parameters::SimulationParameters::gridLength;
-    double lambda = mhd::parameters::SimulationParameters::lambda;
-
+__global__ static void EnergyTransform_kernel(double* velocityX,
+                                              double* velocityY, double* energy,
+                                              unsigned int gridLength,
+                                              double lambda) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int idx = gridLength * x + y;
@@ -160,37 +157,42 @@ __global__ inline void EnergyTransform_kernel(double* velocityX,
         2.;
 }
 
-template <unsigned int SharedBufferLenhth>
-__global__ inline void EnergyIntegrate_kernel(double* field, double* sum) {
+__global__ static void EnergyIntegrate_kernel(double* field, double* sum) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    __shared__ double a[SharedBufferLenhth];
-    a[threadIdx.x] = field[idx];
+    extern __shared__ double sharedBuffer[];
+    sharedBuffer[threadIdx.x] = field[idx];
 
     __syncthreads();
 
     for (unsigned int i = 2; i < blockDim.x + 1; i = i * 2) {
         if (idx % i == 0) {
-            a[threadIdx.x] = a[threadIdx.x] + a[threadIdx.x + i / 2];
+            sharedBuffer[threadIdx.x] =
+                sharedBuffer[threadIdx.x] + sharedBuffer[threadIdx.x + i / 2];
         }
         __syncthreads();
     }
 
-    sum[blockIdx.x] = a[0];
+    sum[blockIdx.x] = sharedBuffer[0];
 }
 
 // Initial Conditions
-__global__ inline void FillNormally_kernel(cufftDoubleComplex* f,
-                                           unsigned int gridLength,
-                                           unsigned int averageWN,
-                                           unsigned long seed) {
+__global__ static void FillStates(curandState* state, unsigned int gridLength,
+                                  unsigned long seed) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int idx = (gridLength / 2 + 1) * x + y;
 
-    curandState state;
-    curand_init(seed, idx, 0, &state);
-    double phase = 2.f * M_PI * curand_uniform(&state);
+    curand_init(seed, idx, 0, &state[idx]);
+}
+
+__global__ static void FillNormally_kernel(cufftDoubleComplex* f,
+                                           curandState* state,
+                                           unsigned int gridLength,
+                                           unsigned int averageWN) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = (gridLength / 2 + 1) * x + y;
 
     if (x > gridLength / 2) {
         x = x - gridLength;
@@ -202,6 +204,8 @@ __global__ inline void FillNormally_kernel(cufftDoubleComplex* f,
                       exp(-(k * k) / (2.f * (double)(averageWN * averageWN))) /
                       sqrt(k)
                 : 0.0;
+
+    double phase = 2.f * M_PI * curand_uniform(&state[idx]);
 
     f[idx].x = cos(phase) * value;
     f[idx].y = sin(phase) * value;
