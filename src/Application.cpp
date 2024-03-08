@@ -8,7 +8,7 @@
 #include "Configs.h"
 #include "Writer.h"
 #include "cuda/Solver.cuh"
-#include "graphics/Painter.h"
+#include "png/Painter.h"
 
 std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
     std::filesystem::path parentDir = "outputs";
@@ -40,7 +40,7 @@ std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
     return outputDir;
 }
 
-void main() {
+int main() {
     std::cout << "This is two-dimensional magnetohydrodynamic simulation"
               << std::endl
               << std::endl;
@@ -73,7 +73,7 @@ void main() {
         mhd::Solver solver(configs);
 
         // Initial Conditions
-        solver.fillNormally(std::time(nullptr));
+        solver.fillNormally(static_cast<unsigned long>(std::time(nullptr)));
 
         // Initial Energy and Time Step
         solver.updateEnergies();

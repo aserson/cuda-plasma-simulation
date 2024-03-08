@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\cuda">
+      <UniqueIdentifier>{1c2deff6-b9fa-47a3-bc7f-19add87c2ce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\png">
+      <UniqueIdentifier>{72857e2b-5e09-4961-b49d-e41a14e4e0b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\colormaps">
+      <UniqueIdentifier>{02239a6b-438e-4886-9651-a630bbc087a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\png">
+      <UniqueIdentifier>{2d4ec0c2-1701-4327-8665-87da8c813d57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\cuda">
+      <UniqueIdentifier>{cca37315-130c-44b6-82ba-e7c4e942c9c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Configuration Files">
+      <UniqueIdentifier>{a319367d-7639-44f4-b1d8-a7797bc5191c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Configs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Writer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\png\fpng.cpp">
+      <Filter>Source Files\png</Filter>
+    </ClCompile>
+    <ClCompile Include="src\png\Painter.cpp">
+      <Filter>Source Files\png</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Configs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\png\fpng.h">
+      <Filter>Header Files\png</Filter>
+    </ClInclude>
+    <ClInclude Include="src\png\Painter.h">
+      <Filter>Header Files\png</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\Buffers.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\FastFourierTransformator.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\Helper.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\KernelCaller.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\Solver.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\HelperKernels.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\SolverKernels.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="src\cuda\Buffers.cu">
+      <Filter>Source Files\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cuda\FastFourierTransformator.cu">
+      <Filter>Source Files\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cuda\Helper.cu">
+      <Filter>Source Files\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cuda\Solver.cu">
+      <Filter>Source Files\cuda</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\colormaps\plasma">
+      <Filter>Resource Files\colormaps</Filter>
+    </None>
+    <None Include="configs\standart1024.yaml">
+      <Filter>Configuration Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

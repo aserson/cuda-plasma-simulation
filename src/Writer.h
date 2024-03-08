@@ -7,7 +7,7 @@
 
 #include "cuda/Buffers.cuh"
 #include "cuda/Helper.cuh"
-#include "graphics/Painter.h"
+#include "png/Painter.h"
 
 namespace mhd {
 class Writer {
