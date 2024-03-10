@@ -17,7 +17,7 @@ Painter::Painter(unsigned int sideLength, const std::string& colorMapName)
 Painter::~Painter() {}
 
 void Painter::readColorMap(const std::string& colorMapName) {
-    std::filesystem::path filePath("resources/colormaps");
+    std::filesystem::path filePath("res/colormaps");
     filePath /= colorMapName;
 
     float red, green, blue;

@@ -37,11 +37,13 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _sharedLength = getSharedLength();
     _linearLength = _gridLength * _gridLength / _sharedLength;
 
+    // OutputBoolParameters
+    _saveData = getSaveData();
+    _savePNG = getSavePNG();
     _saveVorticity = getSaveVorticity();
     _saveCurrent = getSaveCurrent();
     _saveStream = getSaveStream();
     _savePotential = getSavePotential();
-    _savePNG = getSavePNG();
 }
 
 std::string Configs::ParametersPrint() const {
@@ -220,6 +222,22 @@ unsigned int Configs::getSharedLength() {
     }
 }
 
+bool Configs::getSaveData() {
+    if (_config["SaveData"]) {
+        return _config["SaveData"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSaveData;
+    }
+}
+
+bool Configs::getSavePNG() {
+    if (_config["SavePNG"]) {
+        return _config["SavePNG"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultSavePNG;
+    }
+}
+
 bool Configs::getSaveVorticity() {
     if (_config["SaveVorticity"]) {
         return _config["SaveVorticity"].as<bool>();
@@ -249,14 +267,6 @@ bool Configs::getSavePotential() {
         return _config["SavePotential"].as<bool>();
     } else {
         return DefaultConfigs::defaultSavePotential;
-    }
-}
-
-bool Configs::getSavePNG() {
-    if (_config["SavePNG"]) {
-        return _config["SavePNG"].as<bool>();
-    } else {
-        return DefaultConfigs::defaultSavePNG;
     }
 }
 

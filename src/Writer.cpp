@@ -38,50 +38,90 @@ Writer::Writer(const std::filesystem::path& outputDir,
       _outputStep(configs._outputStep),
       _outputStop(configs._outputStop),
       _outputNumber(0),
-      _settings{configs._saveVorticity, configs._saveCurrent,
-                configs._saveStream, configs._savePotential, configs._savePNG} {
-}
+      _settings{configs._saveData,      configs._savePNG,
+                configs._saveVorticity, configs._saveCurrent,
+                configs._saveStream,    configs._savePotential} {}
 
 void Writer::saveData(mhd::Helper& helper, graphics::Painter& painter) {
     if (shouldWrite(helper._currents.time)) {
-        std::filesystem::path currentDir =
-            _outputDir / uintToStr(_outputNumber);
-        std::filesystem::create_directory(currentDir);
+        if (_settings.saveData && _settings.savePNG) {
+            std::filesystem::path currentDir =
+                _outputDir / uintToStr(_outputNumber);
+            std::filesystem::create_directory(currentDir);
 
-        if (_settings.saveVorticity) {
-            save(helper.getVorticity().data(), currentDir / "vorticity");
-            if (_settings.savePNG) {
+            if (_settings.saveVorticity) {
+                save(helper.getVorticity().data(), currentDir / "vorticity");
                 painter.fillBuffer(_output.data());
                 painter.saveAsPNG(_outputDir / "vorticityPNG" /
                                   (uintToStr(_outputNumber) + ".png"));
             }
-        }
-        if (_settings.saveCurrent) {
-            save(helper.getCurrent().data(), currentDir / "current");
-            if (_settings.savePNG) {
+            if (_settings.saveCurrent) {
+                save(helper.getCurrent().data(), currentDir / "current");
                 painter.fillBuffer(_output.data());
                 painter.saveAsPNG(_outputDir / "currentPNG" /
                                   (uintToStr(_outputNumber) + ".png"));
             }
-        }
-        if (_settings.saveStream) {
-            save(helper.getStream().data(), currentDir / "stream");
-            if (_settings.savePNG) {
+            if (_settings.saveStream) {
+                save(helper.getStream().data(), currentDir / "stream");
                 painter.fillBuffer(_output.data());
                 painter.saveAsPNG(_outputDir / "streamPNG" /
                                   (uintToStr(_outputNumber) + ".png"));
             }
-        }
-        if (_settings.savePotential) {
-            save(helper.getPotential().data(), currentDir / "potential");
-            if (_settings.savePNG) {
+            if (_settings.savePotential) {
+                save(helper.getPotential().data(), currentDir / "potential");
+                painter.fillBuffer(_output.data());
+                painter.saveAsPNG(_outputDir / "potentialPNG" /
+                                  (uintToStr(_outputNumber) + ".png"));
+            }
+
+            saveCurrents(helper._currents, currentDir / "data.yaml");
+        } else if (_settings.saveData && !_settings.savePNG) {
+            std::filesystem::path currentDir =
+                _outputDir / uintToStr(_outputNumber);
+            std::filesystem::create_directory(currentDir);
+
+            if (_settings.saveVorticity) {
+                save(helper.getVorticity().data(), currentDir / "vorticity");
+            }
+            if (_settings.saveCurrent) {
+                save(helper.getCurrent().data(), currentDir / "current");
+            }
+            if (_settings.saveStream) {
+                save(helper.getStream().data(), currentDir / "stream");
+            }
+            if (_settings.savePotential) {
+                save(helper.getPotential().data(), currentDir / "potential");
+            }
+
+            saveCurrents(helper._currents, currentDir / "data.yaml");
+        } else if (_settings.savePNG && !_settings.saveData) {
+            if (_settings.saveVorticity) {
+                _output.copyFromDevice(helper.getVorticity().data());
+                painter.fillBuffer(_output.data());
+                painter.saveAsPNG(_outputDir / "vorticityPNG" /
+                                  (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.saveCurrent) {
+                _output.copyFromDevice(helper.getCurrent().data());
+                painter.fillBuffer(_output.data());
+                painter.saveAsPNG(_outputDir / "currentPNG" /
+                                  (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.saveStream) {
+                _output.copyFromDevice(helper.getStream().data());
+                painter.fillBuffer(_output.data());
+                painter.saveAsPNG(_outputDir / "streamPNG" /
+                                  (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.savePotential) {
+                _output.copyFromDevice(helper.getPotential().data());
                 painter.fillBuffer(_output.data());
                 painter.saveAsPNG(_outputDir / "potentialPNG" /
                                   (uintToStr(_outputNumber) + ".png"));
             }
         }
 
-        saveCurrents(helper._currents, currentDir / "data.yaml");
+        if (_settings.saveData) {}
         printCurrents(helper._currents);
 
         step();

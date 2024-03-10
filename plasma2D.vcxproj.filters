@@ -31,6 +31,9 @@
     <Filter Include="Configuration Files">
       <UniqueIdentifier>{a319367d-7639-44f4-b1d8-a7797bc5191c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{61a39b46-e56e-4f8c-93be-3dfc78bb699b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp">
@@ -99,10 +102,16 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\colormaps\plasma">
+    <None Include="configs\standart1024.yaml">
+      <Filter>Configuration Files</Filter>
+    </None>
+    <None Include="res\colormaps\plasma">
       <Filter>Resource Files\colormaps</Filter>
     </None>
-    <None Include="configs\standart1024.yaml">
+    <None Include="res\shaders\basic.shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="configs\fluid1024.yaml">
       <Filter>Configuration Files</Filter>
     </None>
   </ItemGroup>

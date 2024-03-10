@@ -24,11 +24,12 @@ private:
     unsigned int _outputNumber;
 
     struct Settings {
+        bool saveData;
+        bool savePNG;
         bool saveVorticity;
         bool saveCurrent;
         bool saveStream;
         bool savePotential;
-        bool savePNG;
     } _settings;
 
 public:

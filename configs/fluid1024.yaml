@@ -1,0 +1,7 @@
+GridLength : 1024
+Time : 50.
+OutputStep : 0.5
+KineticEnergy : 1.
+MagneticEnergy : 0.
+SavePotential : false
+SaveData : false
