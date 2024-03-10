@@ -44,6 +44,7 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _saveCurrent = getSaveCurrent();
     _saveStream = getSaveStream();
     _savePotential = getSavePotential();
+    _showGraphics = getShowGraphics();
 }
 
 std::string Configs::ParametersPrint() const {
@@ -270,4 +271,11 @@ bool Configs::getSavePotential() {
     }
 }
 
+bool Configs::getShowGraphics() {
+    if (_config["ShowGraphics"]) {
+        return _config["ShowGraphics"].as<bool>();
+    } else {
+        return DefaultConfigs::defaultShowGraphics;
+    }
+}
 }  // namespace mhd

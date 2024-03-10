@@ -244,5 +244,201 @@ unsigned int GpuStateBuffer2D::size() const {
 unsigned int GpuStateBuffer2D::length() const {
     return _sideLength;
 }
-
 }  // namespace mhd
+
+namespace graphics {
+
+// CPUPixelBuffer2D functions definitions
+
+CPUPixelBuffer2D::CPUPixelBuffer2D()
+    : _buffer(nullptr), _sideLength(0), _bufferSize(0), _channels(0) {}
+
+CPUPixelBuffer2D::CPUPixelBuffer2D(unsigned int sideLength,
+                                   unsigned int channels)
+    : _sideLength(sideLength), _channels(channels) {
+    _bufferSize = _sideLength * _sideLength * _channels * sizeof(unsigned char);
+
+    CUDA_CALL(
+        cudaHostAlloc((void**)&_buffer, _bufferSize, cudaHostAllocDefault));
+}
+
+CPUPixelBuffer2D::~CPUPixelBuffer2D() {
+    CUDA_CALL(cudaFreeHost(_buffer));
+}
+
+unsigned char* CPUPixelBuffer2D::data() {
+    return _buffer;
+}
+
+const unsigned char* CPUPixelBuffer2D::data() const {
+    return _buffer;
+}
+
+unsigned int CPUPixelBuffer2D::size() const {
+    return _bufferSize;
+}
+
+unsigned int CPUPixelBuffer2D::length() const {
+    return _sideLength;
+}
+
+void CPUPixelBuffer2D::clear() {
+    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
+}
+
+void CPUPixelBuffer2D::copyToDevice(unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
+}
+
+void CPUPixelBuffer2D::copyFromDevice(const unsigned char* src) {
+    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+}
+
+// GPUPixelBuffer2D functions definitions
+
+GPUPixelBuffer2D::GPUPixelBuffer2D()
+    : _buffer(nullptr), _sideLength(0), _bufferSize(0), _channels(0) {}
+
+GPUPixelBuffer2D::GPUPixelBuffer2D(unsigned int sideLength,
+                                   unsigned int channels)
+    : _sideLength(sideLength), _channels(channels) {
+    _bufferSize = _sideLength * _sideLength * _channels * sizeof(unsigned char);
+
+    CUDA_CALL(cudaMalloc((void**)&_buffer, _bufferSize));
+}
+
+GPUPixelBuffer2D::~GPUPixelBuffer2D() {
+    cudaFree(_buffer);
+}
+
+unsigned char* GPUPixelBuffer2D::data() {
+    return _buffer;
+}
+
+const unsigned char* GPUPixelBuffer2D::data() const {
+    return _buffer;
+}
+
+unsigned int GPUPixelBuffer2D::size() const {
+    return _bufferSize;
+}
+
+unsigned int GPUPixelBuffer2D::length() const {
+    return _sideLength;
+}
+
+void GPUPixelBuffer2D::clear() {
+    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
+}
+
+void GPUPixelBuffer2D::copyToHost(unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost));
+}
+
+void GPUPixelBuffer2D::copyFromHost(const unsigned char* src) {
+    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyHostToDevice));
+}
+
+// CPUColorMapBuffer functions definitions
+
+CPUColorMapBuffer::CPUColorMapBuffer() {
+    _bufferSize = _length * _channels * sizeof(unsigned char);
+    CUDA_CALL(
+        cudaHostAlloc((void**)&_buffer, _bufferSize, cudaHostAllocDefault));
+}
+
+CPUColorMapBuffer::~CPUColorMapBuffer() {
+    CUDA_CALL(cudaFreeHost(_buffer));
+}
+
+unsigned char* CPUColorMapBuffer::data() {
+    return _buffer;
+}
+
+const unsigned char* CPUColorMapBuffer::data() const {
+    return _buffer;
+}
+
+unsigned char& CPUColorMapBuffer::red(unsigned int index) {
+    return _buffer[3 * index + 0];
+}
+
+unsigned char& CPUColorMapBuffer::green(unsigned int index) {
+    return _buffer[3 * index + 1];
+}
+
+unsigned char& CPUColorMapBuffer::blue(unsigned int index) {
+    return _buffer[3 * index + 2];
+}
+
+const unsigned char& CPUColorMapBuffer::red(unsigned int index) const {
+    return _buffer[3 * index + 0];
+}
+
+const unsigned char& CPUColorMapBuffer::green(unsigned int index) const {
+    return _buffer[3 * index + 1];
+}
+
+const unsigned char& CPUColorMapBuffer::blue(unsigned int index) const {
+    return _buffer[3 * index + 2];
+}
+
+unsigned int CPUColorMapBuffer::size() const {
+    return _bufferSize;
+}
+
+unsigned int CPUColorMapBuffer::length() const {
+    return _length;
+}
+
+void CPUColorMapBuffer::clear() {
+    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
+}
+
+void CPUColorMapBuffer::copyToDevice(unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
+}
+
+void CPUColorMapBuffer::copyFromDevice(const unsigned char* src) {
+    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+}
+
+// GPUColorMapBuffer functions definitions
+
+GPUColorMapBuffer::GPUColorMapBuffer() {
+    _bufferSize = _length * _channels * sizeof(unsigned char);
+    CUDA_CALL(cudaMalloc((void**)&_buffer, _bufferSize));
+}
+
+GPUColorMapBuffer::~GPUColorMapBuffer() {
+    CUDA_CALL(cudaFree(_buffer));
+}
+
+unsigned char* GPUColorMapBuffer::data() {
+    return _buffer;
+}
+
+const unsigned char* GPUColorMapBuffer::data() const {
+    return _buffer;
+}
+
+unsigned int GPUColorMapBuffer::size() const {
+    return _bufferSize;
+}
+
+unsigned int GPUColorMapBuffer::length() const {
+    return _length;
+}
+
+void GPUColorMapBuffer::clear() {
+    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
+}
+
+void GPUColorMapBuffer::copyToHost(unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost));
+}
+
+void GPUColorMapBuffer::copyFromHost(const unsigned char* src) {
+    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyHostToDevice));
+}
+}  // namespace graphics

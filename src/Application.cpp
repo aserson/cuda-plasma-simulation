@@ -8,6 +8,7 @@
 #include "Configs.h"
 #include "Writer.h"
 #include "cuda/Solver.cuh"
+#include "openGL/Creater.h"
 #include "png/Painter.h"
 
 std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
@@ -61,10 +62,13 @@ int main() {
     configs.ParametersSave(outputDir);
 
     std::cout << "Creating writer..." << std::endl;
-    mhd::Writer writer(outputDir, configs);
+    mhd::Writer writer(outputDir, configs, "plasma");
 
     std::cout << "Creating painter..." << std::endl;
-    graphics::Painter painter(configs._gridLength, "plasma");
+    png::Painter painter(configs._gridLength, "plasma");
+
+    std::cout << "Creating window..." << std::endl;
+    opengl::Creater creater(32, 1000, 1000);
 
     mhd::CudaTimeCounter counter;
 
@@ -82,10 +86,11 @@ int main() {
         std::cout << "Simulation starts..." << std::endl;
 
         // Initial Data Output
-        writer.saveData(solver, painter);
+        writer.saveData(solver, painter, creater);
+        creater.PrepareToRun();
 
         // Main Cycle of the Program
-        while (solver.shouldContinue()) {
+        while (solver.shouldContinue() && creater.ShouldOpen()) {
             // Saving fields from previous timelayer
             solver.saveOldFields();
 
@@ -118,7 +123,13 @@ int main() {
             solver.timeStep();
 
             // Data Output
-            writer.saveData(solver, painter);
+            if (configs._showGraphics) {
+                creater.Render(writer.saveData(solver, painter, creater));
+            } else {
+                writer.saveData(solver, painter, creater);
+            }
+
+            creater.WindowUpdate();
         }
     }
     counter.stop();

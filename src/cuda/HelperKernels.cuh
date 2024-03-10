@@ -120,7 +120,7 @@ __global__ static void MinusInverseLaplasOperator_kernel(
 }
 
 // Shared Memory Kernels
-__global__ static void Max_kernel(double* input, double* output) {
+__global__ static void Max_kernel(const double* input, double* output) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     extern __shared__ double sharedBuffer[];

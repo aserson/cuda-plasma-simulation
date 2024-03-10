@@ -7,12 +7,16 @@
 
 #include "cuda/Buffers.cuh"
 #include "cuda/Helper.cuh"
+#include "cuda/Painter.cuh"
+#include "openGL/Creater.h"
 #include "png/Painter.h"
 
 namespace mhd {
 class Writer {
 private:
     CpuDoubleBuffer2D _output;
+    graphics::Painter _painter;
+
     void save(const double* field, const std::filesystem::path& filePath);
     void clear();
 
@@ -30,12 +34,15 @@ private:
         bool saveCurrent;
         bool saveStream;
         bool savePotential;
+        bool showGraphics;
     } _settings;
 
 public:
-    Writer(const std::filesystem::path& outputDir, const mhd::Configs& configs);
+    Writer(const std::filesystem::path& outputDir, const mhd::Configs& configs,
+           const std::string& colorMapName);
 
-    void saveData(mhd::Helper& writer, graphics::Painter& painter);
+    bool saveData(mhd::Helper& writer, png::Painter& painter,
+                  opengl::Creater& creater);
 
     void saveCurrents(const Currents& currents,
                       const std::filesystem::path& filePath);

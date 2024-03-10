@@ -34,6 +34,18 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{61a39b46-e56e-4f8c-93be-3dfc78bb699b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\openGL">
+      <UniqueIdentifier>{0cbf1291-2f62-4b6e-a5a0-9067f6abe07a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\openGL">
+      <UniqueIdentifier>{ae76a8c3-2d39-4c31-b8dc-45f12e21d04c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\openGL\stb_image">
+      <UniqueIdentifier>{5dc79169-7163-487c-8e79-abeea6298d82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\openGL\stb_image">
+      <UniqueIdentifier>{aafc7d82-c34c-46c6-8032-692dd03afe35}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp">
@@ -50,6 +62,30 @@
     </ClCompile>
     <ClCompile Include="src\png\Painter.cpp">
       <Filter>Source Files\png</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\Creater.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\Texture.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\VertexArray.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\VertexBuffer.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\IndexBuffer.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\Renderer.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\Shader.cpp">
+      <Filter>Source Files\openGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\openGL\vendor\stb_image\stb_image.cpp">
+      <Filter>Source Files\openGL\stb_image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +122,39 @@
     <ClInclude Include="src\cuda\SolverKernels.cuh">
       <Filter>Header Files\cuda</Filter>
     </ClInclude>
+    <ClInclude Include="src\openGL\Creater.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\VertexBufferLayout.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\Renderer.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\Shader.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\Texture.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\VertexArray.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\VertexBuffer.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\IndexBuffer.h">
+      <Filter>Header Files\openGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\openGL\vendor\stb_image\stb_image.h">
+      <Filter>Header Files\openGL\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\Painter.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cuda\PainterKernels.cuh">
+      <Filter>Header Files\cuda</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\cuda\Buffers.cu">
@@ -98,6 +167,9 @@
       <Filter>Source Files\cuda</Filter>
     </CudaCompile>
     <CudaCompile Include="src\cuda\Solver.cu">
+      <Filter>Source Files\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="src\cuda\Painter.cu">
       <Filter>Source Files\cuda</Filter>
     </CudaCompile>
   </ItemGroup>

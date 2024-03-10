@@ -31,8 +31,9 @@ void Writer::clear() {
 }
 
 Writer::Writer(const std::filesystem::path& outputDir,
-               const mhd::Configs& configs)
+               const mhd::Configs& configs, const std::string& colorMapName)
     : _outputDir(outputDir),
+      _painter(colorMapName, configs),
       _output(configs._gridLength),
       _outputTime(configs._outputStart),
       _outputStep(configs._outputStep),
@@ -40,9 +41,11 @@ Writer::Writer(const std::filesystem::path& outputDir,
       _outputNumber(0),
       _settings{configs._saveData,      configs._savePNG,
                 configs._saveVorticity, configs._saveCurrent,
-                configs._saveStream,    configs._savePotential} {}
+                configs._saveStream,    configs._savePotential,
+                configs._showGraphics} {}
 
-void Writer::saveData(mhd::Helper& helper, graphics::Painter& painter) {
+bool Writer::saveData(mhd::Helper& helper, png::Painter& painter,
+                      opengl::Creater& creater) {
     if (shouldWrite(helper._currents.time)) {
         if (_settings.saveData && _settings.savePNG) {
             std::filesystem::path currentDir =
@@ -121,11 +124,26 @@ void Writer::saveData(mhd::Helper& helper, graphics::Painter& painter) {
             }
         }
 
-        if (_settings.saveData) {}
+        if (_settings.showGraphics && _settings.saveVorticity) {
+            _painter.doubleToPixels(helper.getVorticity(),
+                                    helper.DoubleBufferA(),
+                                    helper.CpuLinearBufferX());
+            creater.AddTexture(_painter.getPixels().data(),
+                               _painter.getLength(), _painter.getLength());
+        } else if (_settings.showGraphics && _settings.saveCurrent) {
+            _painter.doubleToPixels(helper.getCurrent(), helper.DoubleBufferA(),
+                                    helper.CpuLinearBufferX());
+            creater.AddTexture(_painter.getPixels().data(),
+                               _painter.getLength(), _painter.getLength());
+        }
+
         printCurrents(helper._currents);
 
         step();
+
+        return true;
     }
+    return false;
 }
 
 void Writer::saveCurrents(const Currents& currents,

@@ -6,15 +6,17 @@
 
 #include "fpng.h"
 
-namespace graphics {
+namespace png {
 Painter::Painter(unsigned int sideLength, const std::string& colorMapName)
     : _sideLength(sideLength) {
-    _image.resize(_sideLength * _sideLength * 3);
 
+    _pixels = new unsigned char[_sideLength * _sideLength * 3];
     readColorMap(colorMapName);
 }
 
-Painter::~Painter() {}
+Painter::~Painter() {
+    delete[] _pixels;
+}
 
 void Painter::readColorMap(const std::string& colorMapName) {
     std::filesystem::path filePath("res/colormaps");
@@ -26,9 +28,9 @@ void Painter::readColorMap(const std::string& colorMapName) {
     std::ifstream file(filePath);
     if (file.is_open()) {
         while ((file >> red >> green >> blue) && (i < _cmLength)) {
-            _colorMap[i].red = uint8_t(float(255) * red);
-            _colorMap[i].green = uint8_t(float(255) * green);
-            _colorMap[i].blue = uint8_t(float(255) * blue);
+            _colorMap[i].red = (unsigned char)(float(255) * red);
+            _colorMap[i].green = (unsigned char)(float(255) * green);
+            _colorMap[i].blue = (unsigned char)(float(255) * blue);
             i++;
         }
     }
@@ -47,15 +49,21 @@ void Painter::fillBuffer(const double* src) {
                 255. * (amplitude + src[i * _sideLength + j]) / (2 * amplitude);
             uint8_t point = uint8_t(value);
 
-            _image[i * (_sideLength * 3) + j * 3 + 0] = _colorMap[point].red;
-            _image[i * (_sideLength * 3) + j * 3 + 1] = _colorMap[point].green;
-            _image[i * (_sideLength * 3) + j * 3 + 2] = _colorMap[point].blue;
+            _pixels[i * (_sideLength * 3) + j * 3 + 0] = _colorMap[point].red;
+            _pixels[i * (_sideLength * 3) + j * 3 + 1] = _colorMap[point].green;
+            _pixels[i * (_sideLength * 3) + j * 3 + 2] = _colorMap[point].blue;
         }
     }
 }
 
+void Painter::copyBuffer(unsigned char* dst) {
+    for (unsigned int i = 0; i < _sideLength * _sideLength * 3; ++i) {
+        dst[i] = _pixels[i];
+    }
+}
+
 void Painter::saveAsPNG(const std::filesystem::path& filePath) {
-    fpng::fpng_encode_image_to_file(filePath.string().c_str(), _image.data(),
+    fpng::fpng_encode_image_to_file(filePath.string().c_str(), _pixels,
                                     _sideLength, _sideLength, 3);
 }
-}  // namespace graphics
+}  // namespace png

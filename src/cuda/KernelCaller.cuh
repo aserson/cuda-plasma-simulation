@@ -25,8 +25,6 @@ inline void checkCudaKernelError() {
     CUDA_CALL(cudaDeviceSynchronize());
 }
 
-namespace mhd {
-
 class KernelCaller {
 private:
     // Two-dimensional grid
@@ -101,4 +99,3 @@ void KernelCaller::callLinear(Kernel kernel, TArgs... args) {
     CUDA_CALL(cudaDeviceSynchronize());
 #endif  // __CUDACC__
 }
-}  // namespace mhd

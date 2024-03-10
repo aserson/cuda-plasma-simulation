@@ -60,12 +60,14 @@ private:
         static const unsigned int defaultSharedLength = 128;
 
         // WriterSettings
-        static const bool defaultSaveData = true;
-        static const bool defaultSavePNG = true;
-        static const bool defaultSaveVorticity = false;
+        static const bool defaultSaveData = false;
+        static const bool defaultSavePNG = false;
+        static const bool defaultSaveVorticity = true;
         static const bool defaultSaveCurrent = false;
-        static const bool defaultSaveStream = true;
-        static const bool defaultSavePotential = true;
+        static const bool defaultSaveStream = false;
+        static const bool defaultSavePotential = false;
+
+        static const bool defaultShowGraphics = true;
     };
 
     std::filesystem::path _filePath;
@@ -104,6 +106,8 @@ private:
     bool getSaveCurrent();
     bool getSaveStream();
     bool getSavePotential();
+
+    bool getShowGraphics();
 
 public:
     Configs(const std::filesystem::path& filePath);
@@ -147,5 +151,6 @@ public:
     bool _saveCurrent;
     bool _saveStream;
     bool _savePotential;
+    bool _showGraphics;
 };
 }  // namespace mhd
