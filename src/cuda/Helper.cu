@@ -228,43 +228,6 @@ bool Helper::shouldContinue() {
     return _currents.time <= _configs._time;
 }
 
-void Helper::printField(const GpuComplexBuffer2D& field,
-                        const std::string& message) {
-    GpuComplexBuffer2D tmpComplex(field.length());
-    tmpComplex.copyFromDevice(field.data());
-
-    GpuDoubleBuffer2D tmpDouble(field.length());
-    FastFourierTransformator transformator(field.length());
-    transformator.inverseFFT(tmpComplex.data(), tmpDouble.data());
-    _caller.callFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
-                     _configs._lambda, tmpDouble.data());
-
-    Output().copyFromDevice(tmpDouble.data());
-
-    std::cout << "Field " << message << ":	" << Output()[0] << "	"
-              << Output()[1] << "	" << Output()[2] << "	" << Output()[3]
-              << "	" << Output()[4] << std::endl
-              << std::endl;
-}
-
-template <bool IsNormalized>
-void Helper::printField(const GpuDoubleBuffer2D& field,
-                        const std::string& message) {
-    GpuDoubleBuffer2D tmpDouble(field.length());
-    tmpDouble.copyFromDevice(field.data());
-
-    double lambda = (IsNormalized) ? 1. : _configs._lambda;
-    CallKernelFull(MultDouble_kernel, tmpDouble.data(), tmpDouble.length(),
-                   lambda, tmpDouble.data());
-
-    Output().copyFromDevice(tmpDouble.data());
-
-    std::cout << "Field " << message << ":	" << Output()[0] << "	"
-              << Output()[1] << "	" << Output()[2] << "	" << Output()[3]
-              << "	" << Output()[4] << std::endl
-              << std::endl;
-}
-
 CudaTimeCounter::CudaTimeCounter() {
     cudaEventCreate(&_start);
     cudaEventCreate(&_stop);

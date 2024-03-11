@@ -9,7 +9,6 @@
 #include "cuda/Helper.cuh"
 #include "cuda/Painter.cuh"
 #include "openGL/Creater.h"
-#include "png/Painter.h"
 
 namespace mhd {
 class Writer {
@@ -38,11 +37,9 @@ private:
     } _settings;
 
 public:
-    Writer(const std::filesystem::path& outputDir, const mhd::Configs& configs,
-           const std::string& colorMapName);
+    Writer(const std::filesystem::path& outputDir, const mhd::Configs& configs);
 
-    bool saveData(mhd::Helper& writer, png::Painter& painter,
-                  opengl::Creater& creater);
+    bool saveData(mhd::Helper& writer, opengl::Creater& creater);
 
     void saveCurrents(const Currents& currents,
                       const std::filesystem::path& filePath);

@@ -1,3 +1,5 @@
 GridLength : 1024
-Time : 10.
+Time : 1.
 OutputStep : 0.01
+ShowGraphics : true
+ColorMap : plasma

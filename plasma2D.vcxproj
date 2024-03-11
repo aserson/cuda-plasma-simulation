@@ -156,33 +156,28 @@
   <ItemGroup>
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\Configs.cpp" />
+    <ClCompile Include="src\cuda\fpng\fpng.cpp" />
     <ClCompile Include="src\openGL\Creater.cpp" />
     <ClCompile Include="src\openGL\IndexBuffer.cpp" />
     <ClCompile Include="src\openGL\Renderer.cpp" />
     <ClCompile Include="src\openGL\Shader.cpp" />
-    <ClCompile Include="src\openGL\Texture.cpp" />
-    <ClCompile Include="src\openGL\vendor\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\openGL\Textures.cpp" />
     <ClCompile Include="src\openGL\VertexArray.cpp" />
     <ClCompile Include="src\openGL\VertexBuffer.cpp" />
-    <ClCompile Include="src\png\fpng.cpp" />
-    <ClCompile Include="src\png\Painter.cpp" />
     <ClCompile Include="src\Writer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Configs.h" />
+    <ClInclude Include="src\cuda\fpng\fpng.h" />
     <ClInclude Include="src\cuda\Painter.cuh" />
-    <ClInclude Include="src\cuda\PainterKernels.cuh" />
     <ClInclude Include="src\openGL\Creater.h" />
     <ClInclude Include="src\openGL\IndexBuffer.h" />
     <ClInclude Include="src\openGL\Renderer.h" />
     <ClInclude Include="src\openGL\Shader.h" />
-    <ClInclude Include="src\openGL\Texture.h" />
-    <ClInclude Include="src\openGL\vendor\stb_image\stb_image.h" />
+    <ClInclude Include="src\openGL\Textures.h" />
     <ClInclude Include="src\openGL\VertexArray.h" />
     <ClInclude Include="src\openGL\VertexBuffer.h" />
     <ClInclude Include="src\openGL\VertexBufferLayout.h" />
-    <ClInclude Include="src\png\fpng.h" />
-    <ClInclude Include="src\png\Painter.h" />
     <ClInclude Include="src\Writer.h" />
   </ItemGroup>
   <ItemGroup>

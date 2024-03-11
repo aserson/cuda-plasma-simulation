@@ -2,15 +2,15 @@
 
 #include "Renderer.h"
 
-class Texture {
+class Textures {
 private:
     unsigned int m_RendererID[32];
     unsigned char* m_LocalBuffer;
     int m_Width, m_Height, m_BPP;
 
 public:
-    Texture(unsigned int numOutputs);
-    ~Texture();
+    Textures(unsigned int numOutputs);
+    ~Textures();
 
     void Bind(unsigned int slot);
     void Unbind();

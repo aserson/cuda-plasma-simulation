@@ -31,9 +31,9 @@ void Writer::clear() {
 }
 
 Writer::Writer(const std::filesystem::path& outputDir,
-               const mhd::Configs& configs, const std::string& colorMapName)
+               const mhd::Configs& configs)
     : _outputDir(outputDir),
-      _painter(colorMapName, configs),
+      _painter(configs),
       _output(configs._gridLength),
       _outputTime(configs._outputStart),
       _outputStep(configs._outputStep),
@@ -44,95 +44,84 @@ Writer::Writer(const std::filesystem::path& outputDir,
                 configs._saveStream,    configs._savePotential,
                 configs._showGraphics} {}
 
-bool Writer::saveData(mhd::Helper& helper, png::Painter& painter,
-                      opengl::Creater& creater) {
+bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
     if (shouldWrite(helper._currents.time)) {
-        if (_settings.saveData && _settings.savePNG) {
+        if (_settings.saveData) {
             std::filesystem::path currentDir =
                 _outputDir / uintToStr(_outputNumber);
             std::filesystem::create_directory(currentDir);
 
             if (_settings.saveVorticity) {
-                save(helper.getVorticity().data(), currentDir / "vorticity");
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "vorticityPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
+                save(helper.getVorticity().data(),
+                     _outputDir / "vorticity" / uintToStr(_outputNumber));
             }
             if (_settings.saveCurrent) {
-                save(helper.getCurrent().data(), currentDir / "current");
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "currentPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
+                save(helper.getVorticity().data(),
+                     _outputDir / "current" / uintToStr(_outputNumber));
             }
             if (_settings.saveStream) {
-                save(helper.getStream().data(), currentDir / "stream");
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "streamPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
+                save(helper.getVorticity().data(),
+                     _outputDir / "stream" / uintToStr(_outputNumber));
             }
             if (_settings.savePotential) {
-                save(helper.getPotential().data(), currentDir / "potential");
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "potentialPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
+                save(helper.getVorticity().data(),
+                     _outputDir / "potential" / uintToStr(_outputNumber));
             }
 
             saveCurrents(helper._currents, currentDir / "data.yaml");
-        } else if (_settings.saveData && !_settings.savePNG) {
-            std::filesystem::path currentDir =
-                _outputDir / uintToStr(_outputNumber);
-            std::filesystem::create_directory(currentDir);
-
-            if (_settings.saveVorticity) {
-                save(helper.getVorticity().data(), currentDir / "vorticity");
-            }
-            if (_settings.saveCurrent) {
-                save(helper.getCurrent().data(), currentDir / "current");
-            }
-            if (_settings.saveStream) {
-                save(helper.getStream().data(), currentDir / "stream");
-            }
-            if (_settings.savePotential) {
-                save(helper.getPotential().data(), currentDir / "potential");
-            }
-
-            saveCurrents(helper._currents, currentDir / "data.yaml");
-        } else if (_settings.savePNG && !_settings.saveData) {
-            if (_settings.saveVorticity) {
-                _output.copyFromDevice(helper.getVorticity().data());
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "vorticityPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.saveCurrent) {
-                _output.copyFromDevice(helper.getCurrent().data());
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "currentPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.saveStream) {
-                _output.copyFromDevice(helper.getStream().data());
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "streamPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.savePotential) {
-                _output.copyFromDevice(helper.getPotential().data());
-                painter.fillBuffer(_output.data());
-                painter.saveAsPNG(_outputDir / "potentialPNG" /
-                                  (uintToStr(_outputNumber) + ".png"));
-            }
         }
 
-        if (_settings.showGraphics && _settings.saveVorticity) {
-            _painter.doubleToPixels(helper.getVorticity(),
-                                    helper.DoubleBufferA(),
-                                    helper.CpuLinearBufferX());
+        if (_settings.showGraphics) {
+            if (_settings.saveVorticity) {
+                _painter.doubleToPixels(helper.getVorticity(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+            } else if (_settings.saveCurrent) {
+                _painter.doubleToPixels(helper.getCurrent(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+            } else if (_settings.saveStream) {
+                _painter.doubleToPixels(helper.getStream(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+            } else if (_settings.savePotential) {
+                _painter.doubleToPixels(helper.getPotential(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+            }
             creater.AddTexture(_painter.getPixels().data(),
                                _painter.getLength(), _painter.getLength());
-        } else if (_settings.showGraphics && _settings.saveCurrent) {
-            _painter.doubleToPixels(helper.getCurrent(), helper.DoubleBufferA(),
-                                    helper.CpuLinearBufferX());
+        }
+
+        if (_settings.savePNG) {
+            if (_settings.saveVorticity) {
+                _painter.doubleToPixels(helper.getVorticity(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+                _painter.saveAsPNG(_outputDir / "vorticityPNG" /
+                                   (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.saveCurrent) {
+                _painter.doubleToPixels(helper.getCurrent(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+                _painter.saveAsPNG(_outputDir / "currentPNG" /
+                                   (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.saveStream) {
+                _painter.doubleToPixels(helper.getStream(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+                _painter.saveAsPNG(_outputDir / "streamPNG" /
+                                   (uintToStr(_outputNumber) + ".png"));
+            }
+            if (_settings.savePotential) {
+                _painter.doubleToPixels(helper.getPotential(),
+                                        helper.DoubleBufferB(),
+                                        helper.CpuLinearBufferX());
+                _painter.saveAsPNG(_outputDir / "potentialPNG" /
+                                   (uintToStr(_outputNumber) + ".png"));
+            }
             creater.AddTexture(_painter.getPixels().data(),
                                _painter.getLength(), _painter.getLength());
         }

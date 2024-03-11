@@ -98,15 +98,7 @@ public:
     CpuDoubleBuffer1D& CpuLinearBufferY();
     CpuDoubleBuffer2D& Output();
 
-    void printCurrents();
-
     bool shouldContinue();
-
-    void printField(const GpuComplexBuffer2D& field,
-                    const std::string& message = "");
-    template <bool IsNormalized = false>
-    void printField(const GpuDoubleBuffer2D& field,
-                    const std::string& message = "");
 };
 
 class CudaTimeCounter {

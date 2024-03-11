@@ -9,7 +9,6 @@
 #include "Writer.h"
 #include "cuda/Solver.cuh"
 #include "openGL/Creater.h"
-#include "png/Painter.h"
 
 std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
     std::filesystem::path parentDir = "outputs";
@@ -62,10 +61,7 @@ int main() {
     configs.ParametersSave(outputDir);
 
     std::cout << "Creating writer..." << std::endl;
-    mhd::Writer writer(outputDir, configs, "plasma");
-
-    std::cout << "Creating painter..." << std::endl;
-    png::Painter painter(configs._gridLength, "plasma");
+    mhd::Writer writer(outputDir, configs);
 
     std::cout << "Creating window..." << std::endl;
     opengl::Creater creater(32, 1000, 1000);
@@ -86,7 +82,7 @@ int main() {
         std::cout << "Simulation starts..." << std::endl;
 
         // Initial Data Output
-        writer.saveData(solver, painter, creater);
+        writer.saveData(solver, creater);
         creater.PrepareToRun();
 
         // Main Cycle of the Program
@@ -124,9 +120,9 @@ int main() {
 
             // Data Output
             if (configs._showGraphics) {
-                creater.Render(writer.saveData(solver, painter, creater));
+                creater.Render(writer.saveData(solver, creater));
             } else {
-                writer.saveData(solver, painter, creater);
+                writer.saveData(solver, creater);
             }
 
             creater.WindowUpdate();

@@ -16,14 +16,8 @@
     <Filter Include="Source Files\cuda">
       <UniqueIdentifier>{1c2deff6-b9fa-47a3-bc7f-19add87c2ce2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\png">
-      <UniqueIdentifier>{72857e2b-5e09-4961-b49d-e41a14e4e0b6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\colormaps">
       <UniqueIdentifier>{02239a6b-438e-4886-9651-a630bbc087a7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\png">
-      <UniqueIdentifier>{2d4ec0c2-1701-4327-8665-87da8c813d57}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\cuda">
       <UniqueIdentifier>{cca37315-130c-44b6-82ba-e7c4e942c9c2}</UniqueIdentifier>
@@ -40,11 +34,11 @@
     <Filter Include="Header Files\openGL">
       <UniqueIdentifier>{ae76a8c3-2d39-4c31-b8dc-45f12e21d04c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\openGL\stb_image">
-      <UniqueIdentifier>{5dc79169-7163-487c-8e79-abeea6298d82}</UniqueIdentifier>
+    <Filter Include="Header Files\cuda\fpng">
+      <UniqueIdentifier>{ac8895c2-ff4c-4c37-93ad-16bc0e5f1012}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\openGL\stb_image">
-      <UniqueIdentifier>{aafc7d82-c34c-46c6-8032-692dd03afe35}</UniqueIdentifier>
+    <Filter Include="Source Files\cuda\fpng">
+      <UniqueIdentifier>{c3ddebdb-4b6c-4841-b549-c1482f26a81c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -57,16 +51,10 @@
     <ClCompile Include="src\Writer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\png\fpng.cpp">
-      <Filter>Source Files\png</Filter>
-    </ClCompile>
-    <ClCompile Include="src\png\Painter.cpp">
-      <Filter>Source Files\png</Filter>
-    </ClCompile>
     <ClCompile Include="src\openGL\Creater.cpp">
       <Filter>Source Files\openGL</Filter>
     </ClCompile>
-    <ClCompile Include="src\openGL\Texture.cpp">
+    <ClCompile Include="src\openGL\Textures.cpp">
       <Filter>Source Files\openGL</Filter>
     </ClCompile>
     <ClCompile Include="src\openGL\VertexArray.cpp">
@@ -84,8 +72,8 @@
     <ClCompile Include="src\openGL\Shader.cpp">
       <Filter>Source Files\openGL</Filter>
     </ClCompile>
-    <ClCompile Include="src\openGL\vendor\stb_image\stb_image.cpp">
-      <Filter>Source Files\openGL\stb_image</Filter>
+    <ClCompile Include="src\cuda\fpng\fpng.cpp">
+      <Filter>Source Files\cuda\fpng</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -94,12 +82,6 @@
     </ClInclude>
     <ClInclude Include="src\Writer.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\png\fpng.h">
-      <Filter>Header Files\png</Filter>
-    </ClInclude>
-    <ClInclude Include="src\png\Painter.h">
-      <Filter>Header Files\png</Filter>
     </ClInclude>
     <ClInclude Include="src\cuda\Buffers.cuh">
       <Filter>Header Files\cuda</Filter>
@@ -134,7 +116,7 @@
     <ClInclude Include="src\openGL\Shader.h">
       <Filter>Header Files\openGL</Filter>
     </ClInclude>
-    <ClInclude Include="src\openGL\Texture.h">
+    <ClInclude Include="src\openGL\Textures.h">
       <Filter>Header Files\openGL</Filter>
     </ClInclude>
     <ClInclude Include="src\openGL\VertexArray.h">
@@ -146,14 +128,11 @@
     <ClInclude Include="src\openGL\IndexBuffer.h">
       <Filter>Header Files\openGL</Filter>
     </ClInclude>
-    <ClInclude Include="src\openGL\vendor\stb_image\stb_image.h">
-      <Filter>Header Files\openGL\stb_image</Filter>
-    </ClInclude>
     <ClInclude Include="src\cuda\Painter.cuh">
       <Filter>Header Files\cuda</Filter>
     </ClInclude>
-    <ClInclude Include="src\cuda\PainterKernels.cuh">
-      <Filter>Header Files\cuda</Filter>
+    <ClInclude Include="src\cuda\fpng\fpng.h">
+      <Filter>Header Files\cuda\fpng</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

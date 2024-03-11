@@ -69,21 +69,21 @@ void KernelCaller::call(Kernel kernel, TArgs... args) {
 
 #ifdef __CUDACC__
     kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
-    CUDA_CALL(cudaGetLastError());
-    CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaGetLastError());
+    //CUDA_CALL(cudaDeviceSynchronize());
 #endif  // __CUDACC__
 }
 
 template <typename Kernel, typename... TArgs>
 void KernelCaller::callFull(Kernel kernel, TArgs... args) {
-    dim3 dimBlock = dim3(_dimBlockX, _dimBlockY, 1);
-    dim3 dimGrid = dim3(_dimGridX, _dimGridY, 1);
+    dim3 dimBlock = dim3(_dimBlockY, _dimBlockY, 1);
+    dim3 dimGrid = dim3(_dimGridY, _dimGridY, 1);
     size_t sharedSize = 0;
 
 #ifdef __CUDACC__
     kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
-    CUDA_CALL(cudaGetLastError());
-    CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaGetLastError());
+    //CUDA_CALL(cudaDeviceSynchronize());
 #endif  // __CUDACC__
 }
 
@@ -95,7 +95,7 @@ void KernelCaller::callLinear(Kernel kernel, TArgs... args) {
 
 #ifdef __CUDACC__
     kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
-    CUDA_CALL(cudaGetLastError());
-    CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaGetLastError());
+    //CUDA_CALL(cudaDeviceSynchronize());
 #endif  // __CUDACC__
 }

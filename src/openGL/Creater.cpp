@@ -30,7 +30,7 @@ Creater::Creater(unsigned int numOutputs, unsigned int width,
     CreateWindowData();
 
     _shader = new Shader("res/shaders/Basic.shader");
-    _texture = new Texture(numOutputs);
+    _textures = new Textures(numOutputs);
     _renderer = new Renderer();
 }
 
@@ -40,7 +40,7 @@ Creater::~Creater() {
     delete _ib;
 
     delete _shader;
-    delete _texture;
+    delete _textures;
 
     delete _renderer;
 
@@ -76,7 +76,7 @@ void Creater::CreateWindowData() {
 
 void Creater::PrepareToRun() {
     _shader->Bind();
-    _texture->Bind(0);
+    _textures->Bind(0);
     _shader->SetUniform1i("u_Texture", 0);
     _lastTime = glfwGetTime();
 }
@@ -99,7 +99,7 @@ void Creater::UpdateFPSCounter() {
 
 void Creater::AddTexture(const unsigned char* buffer, unsigned int width,
                          unsigned int height) {
-    _texture->LoadTexture(buffer, width, height, _currentTextureIndex % 32);
+    _textures->LoadTexture(buffer, width, height, _currentTextureIndex % 32);
 }
 
 bool Creater::ShouldOpen() {
@@ -113,7 +113,7 @@ void Creater::Render(bool shouldUpdateTexture) {
     if (shouldUpdateTexture) {
         _currentTextureIndex = _currentTextureIndex % 32;
 
-        _texture->Bind(_currentTextureIndex);
+        _textures->Bind(_currentTextureIndex);
         _shader->SetUniform1i("u_Texture", _currentTextureIndex);
         _currentTextureIndex++;
     }

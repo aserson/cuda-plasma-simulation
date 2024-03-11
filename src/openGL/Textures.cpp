@@ -1,30 +1,28 @@
-#include "Texture.h"
+#include "Textures.h"
 
 #include <sstream>
 
-#include "vendor/stb_image/stb_image.h"
-
-Texture::Texture(unsigned int numOutputs)
+Textures::Textures(unsigned int texturesNumb)
     : m_LocalBuffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {
 
-    GLCall(glGenTextures(numOutputs, m_RendererID));
+    GLCall(glGenTextures(texturesNumb, m_RendererID));
 }
 
-Texture::~Texture() {
+Textures::~Textures() {
     GLCall(glDeleteTextures(32, m_RendererID));
 }
 
-void Texture::Bind(unsigned int slot) {
+void Textures::Bind(unsigned int slot) {
     GLCall(glActiveTexture(GL_TEXTURE0 + slot));
     GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID[slot]));
 }
 
-void Texture::Unbind() {
+void Textures::Unbind() {
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
 }
 
-void Texture::LoadTexture(const unsigned char* buffer, unsigned int width,
-                          unsigned int height, unsigned int i) {
+void Textures::LoadTexture(const unsigned char* buffer, unsigned int width,
+                           unsigned int height, unsigned int i) {
     GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID[i]));
 
     // Should be for all textures

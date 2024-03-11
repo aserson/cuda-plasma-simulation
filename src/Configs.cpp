@@ -44,7 +44,9 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _saveCurrent = getSaveCurrent();
     _saveStream = getSaveStream();
     _savePotential = getSavePotential();
+
     _showGraphics = getShowGraphics();
+    _colorMap = getColorMap();
 }
 
 std::string Configs::ParametersPrint() const {
@@ -276,6 +278,13 @@ bool Configs::getShowGraphics() {
         return _config["ShowGraphics"].as<bool>();
     } else {
         return DefaultConfigs::defaultShowGraphics;
+    }
+}
+std::string Configs::getColorMap() {
+    if (_config["ColorMap"]) {
+        return _config["ColorMap"].as<std::string>();
+    } else {
+        return DefaultConfigs::defaultColorMap;
     }
 }
 }  // namespace mhd

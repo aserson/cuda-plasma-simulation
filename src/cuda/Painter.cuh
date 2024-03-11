@@ -26,14 +26,15 @@ protected:
                          mhd::CpuDoubleBuffer1D& cpuLinearBuffer);
 
 public:
-    Painter(const std::string& colorMapName, const mhd::Configs& configs);
+    Painter(const mhd::Configs& configs);
 
     void doubleToPixels(const mhd::GpuDoubleBuffer2D& src,
                         mhd::GpuDoubleBuffer2D& doubleBuffer,
                         mhd::CpuDoubleBuffer1D& cpuLinearBuffer);
 
-    const CPUPixelBuffer2D& getPixels() const { return _cpuPixels; }
+    void saveAsPNG(const std::filesystem::path& filePath);
 
+    const CPUPixelBuffer2D& getPixels() const { return _cpuPixels; }
     unsigned int getLength() const { return _length; }
 };
 }  // namespace graphics

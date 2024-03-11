@@ -9,7 +9,7 @@
 
 #include "Renderer.h"
 #include "Shader.h"
-#include "Texture.h"
+#include "Textures.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
 
@@ -43,7 +43,7 @@ private:
 
     GLFWwindow* _window;
     Shader* _shader;
-    Texture* _texture;
+    Textures* _textures;
     VertexArray* _va;
     VertexBuffer* _vb;
     IndexBuffer* _ib;

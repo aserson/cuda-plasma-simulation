@@ -68,6 +68,7 @@ private:
         static const bool defaultSavePotential = false;
 
         static const bool defaultShowGraphics = true;
+        static constexpr char defaultColorMap[] = "winter";
     };
 
     std::filesystem::path _filePath;
@@ -108,6 +109,7 @@ private:
     bool getSavePotential();
 
     bool getShowGraphics();
+    std::string getColorMap();
 
 public:
     Configs(const std::filesystem::path& filePath);
@@ -151,6 +153,8 @@ public:
     bool _saveCurrent;
     bool _saveStream;
     bool _savePotential;
+
     bool _showGraphics;
+    std::string _colorMap;
 };
 }  // namespace mhd
