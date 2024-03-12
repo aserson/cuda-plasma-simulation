@@ -1,6 +1,8 @@
 #pragma once
 #include "cuda_runtime.h"
 
+#include <limits>
+
 #include <cufft.h>
 #include <curand_kernel.h>
 
@@ -122,23 +124,23 @@ __global__ static void MinusInverseLaplasOperator_kernel(
 // Shared Memory Kernels
 __global__ static void Max_kernel(const double* input, double* output) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int tidx = threadIdx.x;
 
     extern __shared__ double sharedBuffer[];
-    sharedBuffer[threadIdx.x] = fabs(input[idx]);
+    sharedBuffer[tidx] = fabs(input[idx]);
 
     __syncthreads();
 
-    for (unsigned int i = 2; i < blockDim.x + 1; i = i * 2) {
-        if (idx % i == 0) {
-            sharedBuffer[threadIdx.x] =
-                (sharedBuffer[threadIdx.x + i / 2] > sharedBuffer[threadIdx.x])
-                    ? sharedBuffer[threadIdx.x + i / 2]
-                    : sharedBuffer[threadIdx.x];
+    for (unsigned int i = blockDim.x / 2; i > 0; i >>= 1) {
+        if (tidx < i) {
+            sharedBuffer[tidx] =
+                fmax(sharedBuffer[tidx], sharedBuffer[tidx + i]);
         }
         __syncthreads();
     }
 
-    output[blockIdx.x] = sharedBuffer[0];
+    if (tidx == 0)
+        output[blockIdx.x] = sharedBuffer[0];
 }
 
 __global__ static void EnergyTransform_kernel(double* velocityX,
@@ -159,21 +161,22 @@ __global__ static void EnergyTransform_kernel(double* velocityX,
 
 __global__ static void EnergyIntegrate_kernel(double* field, double* sum) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int tidx = threadIdx.x;
 
     extern __shared__ double sharedBuffer[];
-    sharedBuffer[threadIdx.x] = field[idx];
+    sharedBuffer[tidx] = field[idx];
 
     __syncthreads();
 
-    for (unsigned int i = 2; i < blockDim.x + 1; i = i * 2) {
-        if (idx % i == 0) {
-            sharedBuffer[threadIdx.x] =
-                sharedBuffer[threadIdx.x] + sharedBuffer[threadIdx.x + i / 2];
+    for (unsigned int i = blockDim.x / 2; i > 0; i >>= 1) {
+        if (tidx < i) {
+            sharedBuffer[tidx] = sharedBuffer[tidx] + sharedBuffer[tidx + i];
         }
         __syncthreads();
     }
 
-    sum[blockIdx.x] = sharedBuffer[0];
+    if (tidx == 0)
+        sum[blockIdx.x] = sharedBuffer[0];
 }
 
 // Initial Conditions

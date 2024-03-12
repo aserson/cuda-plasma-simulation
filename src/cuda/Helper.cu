@@ -196,11 +196,10 @@ void Helper::updateTimeStep() {
     _currents.maxMagneticField = maxRotorAmplitude(Potential());
 
     _currents.timeStep =
-        (_currents.maxMagneticField > _currents.maxVelocityField)
-            ? cfl * gridStep / _currents.maxMagneticField
-            : cfl * gridStep / _currents.maxVelocityField;
-    if (_currents.timeStep > maxTimeStep)
-        _currents.timeStep = maxTimeStep;
+        cfl * gridStep /
+        fmax(_currents.maxVelocityField, _currents.maxMagneticField);
+
+    _currents.timeStep = fmin(_currents.timeStep, maxTimeStep);
 }
 
 void Helper::fillNormally(unsigned long seed, int offset) {

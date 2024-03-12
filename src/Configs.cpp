@@ -191,13 +191,7 @@ double Configs::getOutputStop() {
     if (_config["OutputStop"]) {
         return _config["OutputStop"].as<double>();
     } else {
-        if (_config["OutputStepTime"]) {
-            return _config["OutputStepTime"].as<double>() *
-                   DefaultConfigs::defaultMaxOutputs;
-        } else {
-            return DefaultConfigs::defaultOutputStep *
-                   DefaultConfigs::defaultMaxOutputs;
-        }
+        return getOutputStep() * DefaultConfigs::defaultMaxOutputs;
     }
 }
 

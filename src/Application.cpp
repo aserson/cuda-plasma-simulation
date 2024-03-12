@@ -26,6 +26,17 @@ std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
 
     std::filesystem::create_directory(outputDir);
 
+    if (configs._saveData) {
+        if (configs._saveVorticity)
+            std::filesystem::create_directory(outputDir / "vorticity");
+        if (configs._saveCurrent)
+            std::filesystem::create_directory(outputDir / "current");
+        if (configs._saveStream)
+            std::filesystem::create_directory(outputDir / "stream");
+        if (configs._savePotential)
+            std::filesystem::create_directory(outputDir / "potential");
+    }
+
     if (configs._savePNG) {
         if (configs._saveVorticity)
             std::filesystem::create_directory(outputDir / "vorticityPNG");
@@ -122,7 +133,7 @@ int main() {
             if (configs._showGraphics) {
                 creater.Render(writer.saveData(solver, creater));
             } else {
-                writer.saveData(solver, creater);
+                writer.saveData(solver);
             }
 
             creater.WindowUpdate();
