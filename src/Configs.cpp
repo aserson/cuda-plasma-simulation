@@ -26,18 +26,18 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _magneticEnergy = getMagneticEnergy();
     _averageWN = getAverageWN();
 
-    // OutputParameters
+    // Output Parameters
     _outputStep = getOutputStep();
     _outputStart = getOutputStart();
     _outputStop = getOutputStop();
 
-    // KernelRunParameters
+    // Kernel Run Parameters
     _dimBlockX = getDimBlockX();
     _dimBlockY = getDimBlockY();
     _sharedLength = getSharedLength();
     _linearLength = _gridLength * _gridLength / _sharedLength;
 
-    // OutputBoolParameters
+    // Writer Settings
     _saveData = getSaveData();
     _savePNG = getSavePNG();
     _saveVorticity = getSaveVorticity();
@@ -45,7 +45,11 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     _saveStream = getSaveStream();
     _savePotential = getSavePotential();
 
+    // Graphics Settings
     _showGraphics = getShowGraphics();
+    _texturesCount = getTexturesCount();
+    _windowWidth = getWindowWidth();
+    _windowHeight = getWindowHeight();
     _colorMap = getColorMap();
 }
 
@@ -272,6 +276,30 @@ bool Configs::getShowGraphics() {
         return _config["ShowGraphics"].as<bool>();
     } else {
         return DefaultConfigs::defaultShowGraphics;
+    }
+}
+
+unsigned int Configs::getTexturesCount() {
+    if (_config["TexturesCount"]) {
+        return _config["TexturesCount"].as<unsigned int>();
+    } else {
+        return DefaultConfigs::defaultTexturesCount;
+    }
+}
+
+unsigned int Configs::getWindowWidth() {
+    if (_config["WindowWidth"]) {
+        return _config["WindowWidth"].as<unsigned int>();
+    } else {
+        return DefaultConfigs::defaultWindowWidth;
+    }
+}
+
+unsigned int Configs::getWindowHeight() {
+    if (_config["WindowHeight"]) {
+        return _config["WindowHeight"].as<unsigned int>();
+    } else {
+        return DefaultConfigs::defaultWindowHeight;
     }
 }
 std::string Configs::getColorMap() {

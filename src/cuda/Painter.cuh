@@ -8,33 +8,32 @@
 #include "KernelCaller.cuh"
 
 namespace graphics {
+
 class Painter {
-protected:
+private:
     KernelCaller _caller;
 
     unsigned int _length;
 
-    CPUColorMapBuffer _cpuColorMap;
-    GPUColorMapBuffer _gpuColorMap;
+    CpuColorMapBuffer _colorMap;
 
-    CPUPixelBuffer2D _cpuPixels;
-    GPUPixelBuffer2D _gpuPixels;
+    CpuPixelBuffer2D _cpuPixels;
+    GpuPixelBuffer2D _gpuPixels;
+
+    CpuFloatBuffer _cpuFloat;
+    GpuFloatBuffer _gpuFloat;
 
     void readColorMap(const std::string& colorMapName);
-    double findAmplitude(const mhd::GpuDoubleBuffer2D& src,
-                         mhd::GpuDoubleBuffer2D& doubleBuffer,
-                         mhd::CpuDoubleBuffer1D& cpuLinearBuffer);
+    float findAmplitude(const mhd::GpuDoubleBuffer2D& src);
 
 public:
     Painter(const mhd::Configs& configs);
 
-    void doubleToPixels(const mhd::GpuDoubleBuffer2D& src,
-                        mhd::GpuDoubleBuffer2D& doubleBuffer,
-                        mhd::CpuDoubleBuffer1D& cpuLinearBuffer);
+    void doubleToPixels(const mhd::GpuDoubleBuffer2D& src);
 
     void saveAsPNG(const std::filesystem::path& filePath);
 
-    const CPUPixelBuffer2D& getPixels() const { return _cpuPixels; }
+    const CpuPixelBuffer2D& getPixels() const { return _cpuPixels; }
     unsigned int getLength() const { return _length; }
 };
 }  // namespace graphics

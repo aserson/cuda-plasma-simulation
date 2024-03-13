@@ -49,17 +49,17 @@ private:
         static constexpr double defaultMagneticEnergy = 0.5;
         static const unsigned int defaultAverageWN = 10;
 
-        // OutputParameters
+        // Output Parameters
         static constexpr double defaultOutputStep = 0.1;
         static constexpr double defaultOutputStart = 0.0;
         static const unsigned int defaultMaxOutputs = 1000;
 
-        // KernelRunParameters
+        // Kernel Run Parameters
         static const unsigned int defaultDimBlockX = 32;
         static const unsigned int defaultDimBlockY = 16;
         static const unsigned int defaultSharedLength = 128;
 
-        // WriterSettings
+        // Writer Settings
         static const bool defaultSaveData = false;
         static const bool defaultSavePNG = false;
         static const bool defaultSaveVorticity = true;
@@ -67,7 +67,11 @@ private:
         static const bool defaultSaveStream = false;
         static const bool defaultSavePotential = false;
 
+        // Graphics Settings
         static const bool defaultShowGraphics = true;
+        static const unsigned int defaultTexturesCount = 32;
+        static const unsigned int defaultWindowWidth = 1024;
+        static const unsigned int defaultWindowHeight = 1024;
         static constexpr char defaultColorMap[] = "winter";
     };
 
@@ -108,7 +112,11 @@ private:
     bool getSaveStream();
     bool getSavePotential();
 
+    // Graphics Settings
     bool getShowGraphics();
+    unsigned int getTexturesCount();
+    unsigned int getWindowWidth();
+    unsigned int getWindowHeight();
     std::string getColorMap();
 
 public:
@@ -135,18 +143,18 @@ public:
     double _magneticEnergy;
     unsigned int _averageWN;
 
-    // OutputParameters
+    // Output Parameters
     double _outputStep;
     double _outputStart;
     double _outputStop;
 
-    // KernelRunParameters
+    // Kernel Run Parameters
     unsigned int _dimBlockX;
     unsigned int _dimBlockY;
     unsigned int _sharedLength;
     unsigned int _linearLength;
 
-    // WriterSettings
+    // Writer Settings
     bool _saveData;
     bool _savePNG;
     bool _saveVorticity;
@@ -154,7 +162,11 @@ public:
     bool _saveStream;
     bool _savePotential;
 
+    // Graphics Settings
     bool _showGraphics;
+    unsigned int _texturesCount;
+    unsigned int _windowWidth;
+    unsigned int _windowHeight;
     std::string _colorMap;
 };
 }  // namespace mhd

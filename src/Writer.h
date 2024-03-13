@@ -40,7 +40,6 @@ public:
     Writer(const std::filesystem::path& outputDir, const mhd::Configs& configs);
 
     bool saveData(mhd::Helper& writer, opengl::Creater& creater);
-    bool saveData(mhd::Helper& writer);
 
     void saveCurrents(const Currents& currents,
                       const std::filesystem::path& filePath);

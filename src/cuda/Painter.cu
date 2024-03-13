@@ -8,16 +8,40 @@
 #include "fpng\fpng.h"
 
 namespace graphics {
+static const unsigned int colorMapLength = 256;
+__constant__ unsigned char colorMap[colorMapLength * 3];
+
+__global__ static void Max_kernel(const double* input, float* output) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int tidx = threadIdx.x;
+
+    extern __shared__ float sharedBuffer[];
+    sharedBuffer[tidx] = fabs(static_cast<float>(input[idx]));
+
+    __syncthreads();
+
+    for (unsigned int i = blockDim.x / 2; i > 0; i >>= 1) {
+        if (tidx < i) {
+            sharedBuffer[tidx] =
+                fmax(sharedBuffer[tidx], sharedBuffer[tidx + i]);
+        }
+        __syncthreads();
+    }
+
+    if (tidx == 0)
+        output[blockIdx.x] = sharedBuffer[0];
+}
+
 __global__ void DoubleToPixels_kernel(unsigned char* output,
                                       const double* input,
-                                      unsigned int gridLength, double amplitude,
-                                      unsigned char* colorMap,
-                                      unsigned int colorMapLength) {
+                                      unsigned int gridLength,
+                                      float amplitude) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int idx = gridLength * x + y;
 
-    double value = (amplitude + input[idx]) / (2 * amplitude);
+    float value = static_cast<float>(input[idx]);
+    value = (amplitude + value) / (2 * amplitude);
     uint8_t point = static_cast<uint8_t>(value * (colorMapLength - 1));
 
     output[3 * idx + 0] = colorMap[3 * point + 0];
@@ -27,15 +51,15 @@ __global__ void DoubleToPixels_kernel(unsigned char* output,
 
 Painter::Painter(const mhd::Configs& configs)
     : _length(configs._gridLength),
-      _cpuColorMap(),
-      _gpuColorMap(),
       _cpuPixels(configs._gridLength),
       _gpuPixels(configs._gridLength),
       _caller(configs._gridLength, configs._dimBlockX, configs._dimBlockY,
-              configs._sharedLength) {
+              configs._sharedLength),
+      _cpuFloat(configs._linearLength),
+      _gpuFloat(configs._linearLength) {
 
     readColorMap(configs._colorMap);
-    _gpuColorMap.copyFromHost(_cpuColorMap.data());
+    CUDA_CALL(cudaMemcpyToSymbol(colorMap, _colorMap.data(), _colorMap.size()));
 }
 
 void Painter::readColorMap(const std::string& colorMapName) {
@@ -47,39 +71,33 @@ void Painter::readColorMap(const std::string& colorMapName) {
 
     std::ifstream file(filePath);
     if (file.is_open()) {
-        while ((file >> red >> green >> blue) && (i < _cpuColorMap.length())) {
-            _cpuColorMap.red(i) = (unsigned char)(float(255) * red);
-            _cpuColorMap.green(i) = (unsigned char)(float(255) * green);
-            _cpuColorMap.blue(i) = (unsigned char)(float(255) * blue);
+        while ((file >> red >> green >> blue) && (i < _colorMap.length())) {
+            _colorMap.red(i) = (unsigned char)(float(255) * red);
+            _colorMap.green(i) = (unsigned char)(float(255) * green);
+            _colorMap.blue(i) = (unsigned char)(float(255) * blue);
             i++;
         }
     }
     file.close();
 }
 
-double Painter::findAmplitude(const mhd::GpuDoubleBuffer2D& src,
-                              mhd::GpuDoubleBuffer2D& doubleBuffer,
-                              mhd::CpuDoubleBuffer1D& cpuLinearBuffer) {
-    _caller.callLinear(mhd::Max_kernel, src.data(), doubleBuffer.data());
+float Painter::findAmplitude(const mhd::GpuDoubleBuffer2D& src) {
+    _caller.callLinearFloat(Max_kernel, src.data(), _gpuFloat.data());
+    _cpuFloat.copyFromDevice(_gpuFloat.data());
 
-    cpuLinearBuffer.copyFromDevice(doubleBuffer.data());
-
-    double v = 0.;
-    for (unsigned int i = 0; i < cpuLinearBuffer.length(); i++) {
-        v = (fabs(cpuLinearBuffer[i]) > v) ? fabs(cpuLinearBuffer[i]) : v;
+    float v = 0.f;
+    for (unsigned int i = 0; i < _cpuFloat.length(); i++) {
+        v = (fabs(_cpuFloat[i]) > v) ? fabs(_cpuFloat[i]) : v;
     }
 
     return v;
 }
 
-void Painter::doubleToPixels(const mhd::GpuDoubleBuffer2D& src,
-                             mhd::GpuDoubleBuffer2D& doubleBuffer,
-                             mhd::CpuDoubleBuffer1D& cpuLinearBuffer) {
-    double amplitude = findAmplitude(src, doubleBuffer, cpuLinearBuffer);
+void Painter::doubleToPixels(const mhd::GpuDoubleBuffer2D& src) {
+    float amplitude = findAmplitude(src);
 
     _caller.callFull(DoubleToPixels_kernel, _gpuPixels.data(), src.data(),
-                     src.length(), amplitude, _gpuColorMap.data(),
-                     _gpuColorMap.length());
+                     src.length(), amplitude);
 
     _cpuPixels.copyFromDevice(_gpuPixels.data());
 }

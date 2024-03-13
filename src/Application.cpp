@@ -51,46 +51,73 @@ std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
     return outputDir;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     std::cout << "This is two-dimensional magnetohydrodynamic simulation"
               << std::endl
               << std::endl;
 
-    std::cout << "Reading configurations file... " << std::endl;
+    std::string confisFile;
 
-    mhd::Configs configs("configs/standart1024.yaml");
+    if (argc > 1) {
+        confisFile += argv[1];
+    } else {
+        confisFile += "configs\\standart1024.yaml";
+    }
 
-    std::cout << "Creating output directory... " << std::endl;
+    std::cout << "Reading configurations file " << confisFile << "... "
+              << std::endl;
+
+    mhd::Configs configs(confisFile);
+
+    std::cout << "Creating output directories... " << std::endl;
 
     const std::filesystem::path outputDir = CreateOutputDir(configs);
 
-    std::cout << "Output directory: " << outputDir << std::endl << std::endl;
+    std::cout << "Output directory: " << outputDir.string() << std::endl
+              << std::endl;
 
     std::cout << "Printing parameters..." << std::endl;
 
     std::cout << configs.ParametersPrint();
     configs.ParametersSave(outputDir);
 
-    std::cout << "Creating writer..." << std::endl;
+    mhd::CudaTimeCounter writerCounter;
+    std::cout << "Creating writer... ";
+    writerCounter.start();
     mhd::Writer writer(outputDir, configs);
+    writerCounter.stop();
+    std::cout << "Done. Time: " << writerCounter.getTime() << std::endl;
 
-    std::cout << "Creating window..." << std::endl;
-    opengl::Creater creater(32, 1000, 1000);
+    mhd::CudaTimeCounter windowCounter;
+    std::cout << "Creating window... ";
+    windowCounter.start();
+    opengl::Creater creater(configs);
+    windowCounter.stop();
+    std::cout << "Done. Time: " << windowCounter.getTime() << std::endl;
 
-    mhd::CudaTimeCounter counter;
-
-    counter.start();
+    mhd::CudaTimeCounter runCounter;
+    runCounter.start();
     {
+        mhd::CudaTimeCounter solverCounter;
+        std::cout << "Creating solver... ";
+        solverCounter.start();
         mhd::Solver solver(configs);
+        solverCounter.stop();
+        std::cout << "Done. Time: " << solverCounter.getTime() << std::endl;
 
         // Initial Conditions
         solver.fillNormally(static_cast<unsigned long>(std::time(nullptr)));
+
+        // Saving fields from previous timelayer
+        solver.saveOldFields();
 
         // Initial Energy and Time Step
         solver.updateEnergies();
         solver.updateTimeStep();
 
-        std::cout << "Simulation starts..." << std::endl;
+        std::cout << std::endl
+                  << "Simulation starts..." << std::endl
+                  << std::endl;
 
         // Initial Data Output
         writer.saveData(solver, creater);
@@ -98,9 +125,6 @@ int main() {
 
         // Main Cycle of the Program
         while (solver.shouldContinue() && creater.ShouldOpen()) {
-            // Saving fields from previous timelayer
-            solver.saveOldFields();
-
             // Time Integration Scheme
             // Two-step Scheme
 
@@ -124,24 +148,21 @@ int main() {
             solver.updateStream();
             solver.updateCurrent();
 
+            // Saving fields from previous timelayer
+            solver.saveOldFields();
+
             // Update Parameters (Energy and Time Step)
             solver.updateEnergies();
             solver.updateTimeStep();
             solver.timeStep();
 
             // Data Output
-            if (configs._showGraphics) {
-                creater.Render(writer.saveData(solver, creater));
-            } else {
-                writer.saveData(solver);
-            }
+            creater.Render(writer.saveData(solver, creater));
 
             creater.WindowUpdate();
         }
     }
-    counter.stop();
-
-    // Calculation Time Output
+    runCounter.stop();
     std::cout << std::endl
-              << "Simulation time: " << counter.getTime() << std::endl;
+              << "Simulation time: " << runCounter.getTime() << std::endl;
 }

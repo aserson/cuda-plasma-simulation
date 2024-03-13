@@ -2,10 +2,10 @@
 
 #include <sstream>
 
-Textures::Textures(unsigned int texturesNumb)
+Textures::Textures(unsigned int texturesCount)
     : m_LocalBuffer(nullptr), m_Width(0), m_Height(0), m_BPP(0) {
 
-    GLCall(glGenTextures(texturesNumb, m_RendererID));
+    GLCall(glGenTextures(texturesCount, m_RendererID));
 }
 
 Textures::~Textures() {

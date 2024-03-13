@@ -6,45 +6,56 @@
 
 namespace opengl {
 
-Creater::Creater(unsigned int numOutputs, unsigned int width,
-                 unsigned int height)
-    : _numOutputs(numOutputs),
+Creater::Creater(const mhd::Configs& configs)
+    : _showGraphics(configs._showGraphics),
       _currentTextureIndex(0),
-      _lastTextureChangeTime(0) {
-    Create(width, height);
+      _lastTime(0) {
+    if (_showGraphics) {
+        Create(configs._windowWidth, configs._windowHeight);
 
-    /* Make the window's context current */
-    glfwMakeContextCurrent(_window);
-    glfwSwapInterval(1);
+        /* Make the window's context current */
+        glfwMakeContextCurrent(_window);
+        glfwSwapInterval(1);
 
-    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-    GLCall(glEnable(GL_BLEND));
+        GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        GLCall(glEnable(GL_BLEND));
 
-    if (glewInit() != GLEW_OK)
-        std::cout << "Error!" << std::endl;
+        if (glewInit() != GLEW_OK)
+            std::cout << "Error!" << std::endl;
 
-    _vb = new VertexBuffer(_positions.data(), _positions.size());
-    _va = new VertexArray();
-    _ib = new IndexBuffer(_indices.data(), _indices.size());
+        _vb = new VertexBuffer(_positions.data(), _positions.size());
+        _va = new VertexArray();
+        _ib = new IndexBuffer(_indices.data(), _indices.size());
 
-    CreateWindowData();
+        CreateWindowData();
 
-    _shader = new Shader("res/shaders/Basic.shader");
-    _textures = new Textures(numOutputs);
-    _renderer = new Renderer();
+        _shader = new Shader("res/shaders/Basic.shader");
+        _textures = new Textures(configs._texturesCount);
+        _renderer = new Renderer();
+    } else {
+        _window = nullptr;
+        _shader = nullptr;
+        _textures = nullptr;
+        _renderer = nullptr;
+
+        _vb = nullptr;
+        _va = nullptr;
+        _ib = nullptr;
+    }
 }
 
 Creater::~Creater() {
-    delete _vb;
-    delete _va;
-    delete _ib;
+    if (_showGraphics) {
+        delete _renderer;
+        delete _textures;
+        delete _shader;
 
-    delete _shader;
-    delete _textures;
+        delete _ib;
+        delete _va;
+        delete _vb;
 
-    delete _renderer;
-
-    glfwTerminate();
+        glfwTerminate();
+    }
 }
 
 int Creater::Create(unsigned int width, unsigned int height) {
@@ -75,59 +86,69 @@ void Creater::CreateWindowData() {
 }
 
 void Creater::PrepareToRun() {
-    _shader->Bind();
-    _textures->Bind(0);
-    _shader->SetUniform1i("u_Texture", 0);
-    _lastTime = glfwGetTime();
+    if (_showGraphics) {
+        _shader->Bind();
+        _textures->Bind(0);
+        _shader->SetUniform1i("u_Texture", 0);
+        _lastTime = glfwGetTime();
+    }
 }
 
 void Creater::UpdateFPSCounter() {
-    double currentTime = glfwGetTime();
-    double delta = currentTime - _lastTime;
-    _frames++;
+    if (_showGraphics) {
+        double currentTime = glfwGetTime();
+        double delta = currentTime - _lastTime;
+        _frames++;
 
-    if (delta >= 1.0) {
-        double fps = double(_frames) / delta;
+        if (delta >= 1.0) {
+            double fps = double(_frames) / delta;
 
-        std::string title = "FPS: " + std::to_string(fps);
-        glfwSetWindowTitle(_window, title.c_str());
+            std::string title = "FPS: " + std::to_string(fps);
+            glfwSetWindowTitle(_window, title.c_str());
 
-        _frames = 0;
-        _lastTime = currentTime;
+            _frames = 0;
+            _lastTime = currentTime;
+        }
     }
 }
 
 void Creater::AddTexture(const unsigned char* buffer, unsigned int width,
                          unsigned int height) {
-    _textures->LoadTexture(buffer, width, height, _currentTextureIndex % 32);
+    if (_showGraphics) {
+        _textures->LoadTexture(buffer, width, height,
+                               _currentTextureIndex % 32);
+    }
 }
 
 bool Creater::ShouldOpen() {
-    return !glfwWindowShouldClose(_window);
+    if (_showGraphics)
+        return !glfwWindowShouldClose(_window);
+    return true;
 }
 
 void Creater::Render(bool shouldUpdateTexture) {
-    _renderer->Clear();
-    _shader->Bind();
+    if (_showGraphics) {
+        _renderer->Clear();
+        _shader->Bind();
 
-    if (shouldUpdateTexture) {
-        _currentTextureIndex = _currentTextureIndex % 32;
+        if (shouldUpdateTexture) {
+            _currentTextureIndex = _currentTextureIndex % 32;
 
-        _textures->Bind(_currentTextureIndex);
-        _shader->SetUniform1i("u_Texture", _currentTextureIndex);
-        _currentTextureIndex++;
+            _textures->Bind(_currentTextureIndex);
+            _shader->SetUniform1i("u_Texture", _currentTextureIndex);
+            _currentTextureIndex++;
+        }
+
+        _renderer->Draw(*_va, *_ib, *_shader);
+
+        UpdateFPSCounter();
     }
-
-    _renderer->Draw(*_va, *_ib, *_shader);
-
-    UpdateFPSCounter();
 }
 
 void Creater::WindowUpdate() {
-    /* Swap front and back buffers */
-    glfwSwapBuffers(_window);
-
-    /* Poll for and process events */
-    glfwPollEvents();
+    if (_showGraphics) {
+        glfwSwapBuffers(_window);
+        glfwPollEvents();
+    }
 }
 }  // namespace opengl

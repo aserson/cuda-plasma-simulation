@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <string>
 
+#include "../Configs.h"
+
 #include "Renderer.h"
 #include "Shader.h"
 #include "Textures.h"
@@ -20,7 +22,7 @@ public:
     static const std::array<float, 16> _positions;
     static const std::array<unsigned int, 6> _indices;
 
-    Creater(unsigned int numOutputs, unsigned int width, unsigned int height);
+    Creater(const mhd::Configs& configs);
     ~Creater();
 
     bool ShouldOpen();
@@ -31,9 +33,9 @@ public:
     void WindowUpdate();
 
 private:
-    unsigned int _numOutputs;
+    bool _showGraphics;
+
     int _currentTextureIndex;
-    double _lastTextureChangeTime;
     unsigned int _frames = 0;
     double _lastTime;
 
@@ -44,11 +46,11 @@ private:
     GLFWwindow* _window;
     Shader* _shader;
     Textures* _textures;
+    Renderer* _renderer;
+
     VertexArray* _va;
     VertexBuffer* _vb;
     IndexBuffer* _ib;
-
-    Renderer* _renderer;
 };
 
 inline const std::array<float, 16> Creater::_positions = {

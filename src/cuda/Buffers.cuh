@@ -122,7 +122,54 @@ public:
 }  // namespace mhd
 
 namespace graphics {
-class CPUPixelBuffer2D {
+class CpuFloatBuffer {
+private:
+    float* _buffer;
+    unsigned int _bufferLength;
+    unsigned int _bufferSize;
+
+public:
+    CpuFloatBuffer();
+    CpuFloatBuffer(unsigned int bufferLength);
+    ~CpuFloatBuffer();
+
+    float* data();
+    const float* data() const;
+
+    float& operator[](unsigned int index);
+    const float& operator[](unsigned int index) const;
+
+    unsigned int size() const;
+    unsigned int length() const;
+
+    void clear();
+    void copyToDevice(float* dst) const;
+    void copyFromDevice(const float* src);
+};
+
+class GpuFloatBuffer {
+private:
+    float* _buffer;
+    unsigned int _bufferLength;
+    unsigned int _bufferSize;
+
+public:
+    GpuFloatBuffer();
+    GpuFloatBuffer(unsigned int bufferLength);
+    ~GpuFloatBuffer();
+
+    float* data();
+    const float* data() const;
+
+    unsigned int size() const;
+    unsigned int length() const;
+
+    void clear();
+    void copyToDevice(float* dst) const;
+    void copyFromDevice(const float* src);
+};
+
+class CpuPixelBuffer2D {
 private:
     unsigned char* _buffer;
     unsigned int _sideLength;
@@ -130,9 +177,9 @@ private:
     unsigned int _bufferSize;
 
 public:
-    CPUPixelBuffer2D();
-    CPUPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
-    ~CPUPixelBuffer2D();
+    CpuPixelBuffer2D();
+    CpuPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
+    ~CpuPixelBuffer2D();
 
     unsigned char* data();
     const unsigned char* data() const;
@@ -145,7 +192,7 @@ public:
     void copyFromDevice(const unsigned char* src);
 };
 
-class GPUPixelBuffer2D {
+class GpuPixelBuffer2D {
 private:
     unsigned char* _buffer;
     unsigned int _sideLength;
@@ -153,9 +200,9 @@ private:
     unsigned int _bufferSize;
 
 public:
-    GPUPixelBuffer2D();
-    GPUPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
-    ~GPUPixelBuffer2D();
+    GpuPixelBuffer2D();
+    GpuPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
+    ~GpuPixelBuffer2D();
 
     unsigned char* data();
     const unsigned char* data() const;
@@ -168,17 +215,13 @@ public:
     void copyFromHost(const unsigned char* src);
 };
 
-class CPUColorMapBuffer {
+class CpuColorMapBuffer {
 private:
-    unsigned char* _buffer;
+    unsigned char _buffer[256 * 3];
     unsigned int _length = 256;
     unsigned int _channels = 3;
-    unsigned int _bufferSize;
 
 public:
-    CPUColorMapBuffer();
-    ~CPUColorMapBuffer();
-
     unsigned char* data();
     const unsigned char* data() const;
 
@@ -192,32 +235,5 @@ public:
 
     unsigned int size() const;
     unsigned int length() const;
-
-    void clear();
-    void copyToDevice(unsigned char* dst) const;
-    void copyFromDevice(const unsigned char* src);
-};
-
-class GPUColorMapBuffer {
-private:
-    unsigned char* _buffer;
-    unsigned int _length = 256;
-    unsigned int _channels = 3;
-    unsigned int _bufferSize;
-
-public:
-    GPUColorMapBuffer();
-    GPUColorMapBuffer(unsigned int sideLength, unsigned int channels = 3);
-    ~GPUColorMapBuffer();
-
-    unsigned char* data();
-    const unsigned char* data() const;
-
-    unsigned int size() const;
-    unsigned int length() const;
-
-    void clear();
-    void copyToHost(unsigned char* dst) const;
-    void copyFromHost(const unsigned char* src);
 };
 }  // namespace graphics
