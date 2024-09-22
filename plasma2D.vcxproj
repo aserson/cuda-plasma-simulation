@@ -123,6 +123,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\yaml-cpp\lib\;$(SolutionDir)lib\GLWF\lib-vc2022;$(SolutionDir)lib\GLEW\lib\Release\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;cufft.lib;yaml-cppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib
+</IgnoreSpecificDefaultLibraries>
     </Link>
     <CudaCompile>
       <CompileOut>$(SolutionDir)bin\$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
@@ -147,6 +149,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\yaml-cpp\lib\;$(SolutionDir)lib\GLWF\lib-vc2022;$(SolutionDir)lib\GLEW\lib\Release\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;cufft.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib
+</IgnoreSpecificDefaultLibraries>
     </Link>
     <CudaCompile>
       <CompileOut>$(SolutionDir)bin\$(Configuration)\%(Filename)%(Extension).obj</CompileOut>

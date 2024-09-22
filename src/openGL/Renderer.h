@@ -9,9 +9,9 @@
 #define ASSERT(x) \
     if (!(x))     \
         __debugbreak();
-#define GLCall(x) \
-    GLClearError; \
-    x;            \
+#define GLCall(x)   \
+    GLClearError(); \
+    x;              \
     ASSERT(GLLogError(#x, __FILE__, __LINE__));
 
 void GLClearError();

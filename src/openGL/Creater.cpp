@@ -68,11 +68,13 @@ int Creater::Create(unsigned int width, unsigned int height) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    _window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
+    _window = glfwCreateWindow(width, height, "2D plasma", NULL, NULL);
     if (!_window) {
         glfwTerminate();
         return -1;
     }
+
+    return 0;
 }
 
 void Creater::CreateWindowData() {
