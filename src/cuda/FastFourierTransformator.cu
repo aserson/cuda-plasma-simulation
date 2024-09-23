@@ -1,4 +1,4 @@
-#include "FastFourierTransformator.cuh"
+#include "cuda/FastFourierTransformator.cuh"
 
 #include <iostream>
 
