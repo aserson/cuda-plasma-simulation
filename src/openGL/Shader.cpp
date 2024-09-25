@@ -1,11 +1,11 @@
-#include "Shader.h"
+#include "openGL/Shader.h"
 
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-#include "Renderer.h"
+#include "openGL/Renderer.h"
 
 Shader::Shader(const std::string& filepath)
     : m_FilePath(filepath), m_RendererID(0) {

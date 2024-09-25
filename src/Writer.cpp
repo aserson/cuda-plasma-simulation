@@ -30,10 +30,11 @@ void Writer::clear() {
     memset(_output.data(), 0x0, _output.size());
 }
 
-Writer::Writer(const std::filesystem::path& outputDir,
-               const mhd::Configs& configs)
-    : _outputDir(outputDir),
-      _painter(configs),
+Writer::Writer(const std::filesystem::path& outputPath,
+               const mhd::Configs& configs,
+               const std::filesystem::path& resPath)
+    : _outputPath(outputPath),
+      _painter(configs, resPath),
       _output(configs._gridLength),
       _outputTime(configs._outputStart),
       _outputStep(configs._outputStep),
@@ -47,28 +48,28 @@ Writer::Writer(const std::filesystem::path& outputDir,
 bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
     if (shouldWrite(helper._currents.time)) {
         if (_settings.saveData) {
-            std::filesystem::path currentDir =
-                _outputDir / uintToStr(_outputNumber);
-            std::filesystem::create_directory(currentDir);
+            std::filesystem::path currentPath =
+                _outputPath / uintToStr(_outputNumber);
+            std::filesystem::create_directory(currentPath);
 
             if (_settings.saveVorticity) {
                 save(helper.getVorticity().data(),
-                     _outputDir / "vorticity" / uintToStr(_outputNumber));
+                     _outputPath / "vorticity" / uintToStr(_outputNumber));
             }
             if (_settings.saveCurrent) {
                 save(helper.getVorticity().data(),
-                     _outputDir / "current" / uintToStr(_outputNumber));
+                     _outputPath / "current" / uintToStr(_outputNumber));
             }
             if (_settings.saveStream) {
                 save(helper.getVorticity().data(),
-                     _outputDir / "stream" / uintToStr(_outputNumber));
+                     _outputPath / "stream" / uintToStr(_outputNumber));
             }
             if (_settings.savePotential) {
                 save(helper.getVorticity().data(),
-                     _outputDir / "potential" / uintToStr(_outputNumber));
+                     _outputPath / "potential" / uintToStr(_outputNumber));
             }
 
-            saveCurrents(helper._currents, currentDir / "data.yaml");
+            saveCurrents(helper._currents, currentPath / "data.yaml");
         }
 
         if (_settings.showGraphics) {
@@ -83,29 +84,6 @@ bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
             }
             creater.AddTexture(_painter.getPixels().data(),
                                _painter.getLength(), _painter.getLength());
-        }
-
-        if (_settings.savePNG) {
-            if (_settings.saveVorticity) {
-                _painter.doubleToPixels(helper.getVorticity());
-                _painter.saveAsPNG(_outputDir / "vorticityPNG" /
-                                   (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.saveCurrent) {
-                _painter.doubleToPixels(helper.getCurrent());
-                _painter.saveAsPNG(_outputDir / "currentPNG" /
-                                   (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.saveStream) {
-                _painter.doubleToPixels(helper.getStream());
-                _painter.saveAsPNG(_outputDir / "streamPNG" /
-                                   (uintToStr(_outputNumber) + ".png"));
-            }
-            if (_settings.savePotential) {
-                _painter.doubleToPixels(helper.getPotential());
-                _painter.saveAsPNG(_outputDir / "potentialPNG" /
-                                   (uintToStr(_outputNumber) + ".png"));
-            }
         }
 
         printCurrents(helper._currents);

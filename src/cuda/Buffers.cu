@@ -1,6 +1,6 @@
-#include "Buffers.cuh"
+#include "cuda/Buffers.cuh"
 
-#include "KernelCaller.cuh"
+#include "cuda/KernelCaller.cuh"
 
 namespace mhd {
 

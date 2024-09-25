@@ -1,10 +1,10 @@
-#include "IndexBuffer.h"
+#include "openGL/IndexBuffer.h"
 
-#include "Renderer.h"
+#include "openGL/Renderer.h"
 
-IndexBuffer::IndexBuffer(const unsigned int* data, size_t count)
+IndexBuffer::IndexBuffer(const unsigned int* data, unsigned int count)
     : m_Count(count) {
-    ASSERT(sizeof(size_t) == sizeof(GLuint));
+    ASSERT(sizeof(unsigned int) == sizeof(GLuint));
 
     GLCall(glGenBuffers(1, &m_RendererID));
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID));

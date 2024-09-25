@@ -1,6 +1,6 @@
-#include "Solver.cuh"
+#include "cuda/Solver.cuh"
 
-#include "SolverKernels.cuh"
+#include "cuda/SolverKernels.cuh"
 
 namespace mhd {
 

@@ -1,10 +1,10 @@
-#include "Helper.cuh"
+#include "cuda/Helper.cuh"
 
 #include <iostream>
 #include <string>
 
-#include "Buffers.cuh"
-#include "HelperKernels.cuh"
+#include "cuda/Buffers.cuh"
+#include "cuda/HelperKernels.cuh"
 
 namespace mhd {
 double Helper::maxRotorAmplitude(const GpuComplexBuffer2D& field) {

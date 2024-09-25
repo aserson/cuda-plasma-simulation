@@ -1,11 +1,10 @@
-#include "Painter.cuh"
+#include "cuda/Painter.cuh"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
-#include "HelperKernels.cuh"
-#include "fpng\fpng.h"
+#include "cuda/HelperKernels.cuh"
 
 namespace graphics {
 static const unsigned int colorMapLength = 256;
@@ -49,7 +48,8 @@ __global__ void DoubleToPixels_kernel(unsigned char* output,
     output[3 * idx + 2] = colorMap[3 * point + 2];
 }
 
-Painter::Painter(const mhd::Configs& configs)
+Painter::Painter(const mhd::Configs& configs,
+                 const std::filesystem::path& resPath)
     : _length(configs._gridLength),
       _cpuPixels(configs._gridLength),
       _gpuPixels(configs._gridLength),
@@ -58,13 +58,19 @@ Painter::Painter(const mhd::Configs& configs)
       _cpuFloat(configs._linearLength),
       _gpuFloat(configs._linearLength) {
 
-    readColorMap(configs._colorMap);
-    CUDA_CALL(cudaMemcpyToSymbol(colorMap, _colorMap.data(), _colorMap.size()));
+    if (readColorMap(configs._colorMap, resPath))
+        CUDA_CALL(
+            cudaMemcpyToSymbol(colorMap, _colorMap.data(), _colorMap.size()));
 }
 
-void Painter::readColorMap(const std::string& colorMapName) {
-    std::filesystem::path filePath("res/colormaps");
-    filePath /= colorMapName;
+bool Painter::readColorMap(const std::string& colorMapName,
+                           const std::filesystem::path& resPath) {
+    std::filesystem::path filePath = resPath / "colormaps" / colorMapName;
+    if (!exists(filePath)) {
+        std::cout << "Color Map by name " << colorMapName << " not exists"
+                  << std::endl;
+        return false;
+    }
 
     float red, green, blue;
     unsigned int i = 0;
@@ -77,8 +83,13 @@ void Painter::readColorMap(const std::string& colorMapName) {
             _colorMap.blue(i) = (unsigned char)(float(255) * blue);
             i++;
         }
+    } else {
+        std::cout << "File " << filePath.filename() << " can not be opened "
+                  << std::endl;
+        return false;
     }
-    file.close();
+
+    return true;
 }
 
 float Painter::findAmplitude(const mhd::GpuDoubleBuffer2D& src) {
@@ -100,10 +111,5 @@ void Painter::doubleToPixels(const mhd::GpuDoubleBuffer2D& src) {
                      src.length(), amplitude);
 
     _cpuPixels.copyFromDevice(_gpuPixels.data());
-}
-
-void Painter::saveAsPNG(const std::filesystem::path& filePath) {
-    fpng::fpng_encode_image_to_file(filePath.string().c_str(),
-                                    _cpuPixels.data(), _length, _length, 3);
 }
 }  // namespace graphics

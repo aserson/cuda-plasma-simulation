@@ -10,45 +10,92 @@
 #include "cuda/Solver.cuh"
 #include "openGL/Creater.h"
 
-std::filesystem::path CreateOutputDir(const mhd::Configs& configs) {
-    std::filesystem::path parentDir = "outputs";
+std::filesystem::path FindConfPath(std::filesystem::path& exePath) {
+    if (exists(exePath / "configs")) {
+        return exePath / "configs";
+    }
 
-    if (std::filesystem::exists(parentDir) == false)
-        std::filesystem::create_directory(parentDir);
+    if (exists(exePath.parent_path() / "configs")) {
+        exePath = exePath.parent_path();
+        return exePath / "configs";
+    }
 
-    auto currentFullTime = time(nullptr);
+    if (exists(exePath.parent_path().parent_path() / "configs")) {
+        exePath = exePath.parent_path().parent_path();
+        return exePath / "configs";
+    }
 
-    std::ostringstream currenTimeStream;
-    currenTimeStream << std::put_time(localtime(&currentFullTime), "%Y%m%d")
-                     << "_"
-                     << std::put_time(localtime(&currentFullTime), "%H%M%S");
-    auto outputDir = parentDir / currenTimeStream.str();
+    return std::filesystem::path("");
+}
 
-    std::filesystem::create_directory(outputDir);
+std::filesystem::path FindResPath(std::filesystem::path& exePath) {
+    if (exists(exePath / "res")) {
+        return exePath / "res";
+    }
+
+    if (exists(exePath.parent_path() / "res")) {
+        exePath = exePath.parent_path();
+        return exePath / "res";
+    }
+
+    if (exists(exePath.parent_path().parent_path() / "res")) {
+        exePath = exePath.parent_path().parent_path();
+        return exePath / "res";
+    }
+
+    return std::filesystem::path("");
+}
+
+std::filesystem::path CreateOutputDir(const mhd::Configs& configs,
+                                      const std::filesystem::path& parantPath) {
+    if (exists(parantPath) == false)
+        create_directory(parantPath);
+
+    tm timeInfo;
+    time_t rawTime;
+    time(&rawTime);
+
+    char currenOutputDir[80] = "000000_000000";
+
+#if defined(_MSC_VER)
+    if (localtime_s(&timeInfo, &rawTime) == 0) {
+        strftime(currenOutputDir, sizeof(currenOutputDir), "%Y%m%d_%H%M%S",
+                 &timeInfo);
+    }
+#else
+    if (localtime_r(&rawTime, &timeInfo) != nullptr) {
+        strftime(currenOutputDir, sizeof(currenOutputDir), "%Y%m%d_%H%M%S",
+                 &timeInfo);
+    }
+#endif
+
+    auto outputPath = parantPath / std::string(currenOutputDir);
+
+    create_directory(outputPath);
 
     if (configs._saveData) {
         if (configs._saveVorticity)
-            std::filesystem::create_directory(outputDir / "vorticity");
+            create_directory(outputPath / "vorticity");
         if (configs._saveCurrent)
-            std::filesystem::create_directory(outputDir / "current");
+            create_directory(outputPath / "current");
         if (configs._saveStream)
-            std::filesystem::create_directory(outputDir / "stream");
+            create_directory(outputPath / "stream");
         if (configs._savePotential)
-            std::filesystem::create_directory(outputDir / "potential");
+            create_directory(outputPath / "potential");
     }
 
     if (configs._savePNG) {
         if (configs._saveVorticity)
-            std::filesystem::create_directory(outputDir / "vorticityPNG");
+            create_directory(outputPath / "vorticityPNG");
         if (configs._saveCurrent)
-            std::filesystem::create_directory(outputDir / "currentPNG");
+            create_directory(outputPath / "currentPNG");
         if (configs._saveStream)
-            std::filesystem::create_directory(outputDir / "streamPNG");
+            create_directory(outputPath / "streamPNG");
         if (configs._savePotential)
-            std::filesystem::create_directory(outputDir / "potentialPNG");
+            create_directory(outputPath / "potentialPNG");
     }
 
-    return outputDir;
+    return outputPath;
 }
 
 int main(int argc, char* argv[]) {
@@ -56,42 +103,62 @@ int main(int argc, char* argv[]) {
               << std::endl
               << std::endl;
 
-    std::string confisFile;
+    std::filesystem::path projectPath =
+        std::filesystem::canonical(argv[0]).parent_path();
 
-    if (argc > 1) {
-        confisFile += argv[1];
-    } else {
-        confisFile += "configs\\standart1024.yaml";
+    std::filesystem::path configsPath, resPath;
+
+    if (configsPath = FindConfPath(projectPath); configsPath.string() == "") {
+        std::cout << "Configuration folder not exists" << std::endl;
+        return -1;
     }
 
-    std::cout << "Reading configurations file " << confisFile << "... "
+    if (resPath = FindResPath(projectPath); resPath.string() == "") {
+        std::cout << "Resources folder not exists" << std::endl;
+        return -1;
+    }
+
+    std::filesystem::path configFile = configsPath;
+
+    if (argc > 1) {
+        configFile /= std::filesystem::path(argv[1]);
+    } else {
+        configFile /= std::filesystem::path("standart1024.yaml");
+    }
+
+    if (!exists(configFile)) {
+        std::cout << "Configuration file not exists" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Configurations file: " << configFile.filename().string()
               << std::endl;
 
-    mhd::Configs configs(confisFile);
+    mhd::Configs configs(configFile);
 
-    std::cout << "Creating output directories... " << std::endl;
+    const std::filesystem::path outputPath =
+        CreateOutputDir(configs, projectPath / "bin" / "outputs");
 
-    const std::filesystem::path outputDir = CreateOutputDir(configs);
-
-    std::cout << "Output directory: " << outputDir.string() << std::endl
+    std::cout << "Output directory: " << outputPath.filename().string()
+              << std::endl
               << std::endl;
 
-    std::cout << "Printing parameters..." << std::endl;
+    std::cout << "Main Parameters:" << std::endl;
 
     std::cout << configs.ParametersPrint();
-    configs.ParametersSave(outputDir);
+    configs.ParametersSave(outputPath);
 
     mhd::CudaTimeCounter writerCounter;
     std::cout << "Creating writer... ";
     writerCounter.start();
-    mhd::Writer writer(outputDir, configs);
+    mhd::Writer writer(outputPath, configs, resPath);
     writerCounter.stop();
     std::cout << "Done. Time: " << writerCounter.getTime() << std::endl;
 
     mhd::CudaTimeCounter windowCounter;
     std::cout << "Creating window... ";
     windowCounter.start();
-    opengl::Creater creater(configs);
+    opengl::Creater creater(configs, resPath);
     windowCounter.stop();
     std::cout << "Done. Time: " << windowCounter.getTime() << std::endl;
 
