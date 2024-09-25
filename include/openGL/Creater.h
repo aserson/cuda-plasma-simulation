@@ -1,7 +1,7 @@
 #pragma once
 
-#include <gl/glew.h>
-#include <glfw/glfw3.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include <array>
 #include <filesystem>

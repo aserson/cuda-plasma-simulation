@@ -1,4 +1,4 @@
-#include "opengl/Textures.h"
+#include "openGL/Textures.h"
 
 #include <sstream>
 

@@ -8,30 +8,40 @@
 #include "Configs.h"
 #include "Writer.h"
 #include "cuda/Solver.cuh"
-#include "opengl/Creater.h"
+#include "openGL/Creater.h"
 
-std::filesystem::path FindResPath(const std::filesystem::path& exePath) {
-    if (exists(exePath / "res"))
-        return exePath / "res";
+std::filesystem::path FindConfPath(std::filesystem::path& exePath) {
+    if (exists(exePath / "configs")) {
+        return exePath / "configs";
+    }
 
-    if (exists(exePath.parent_path() / "res"))
-        return exePath.parent_path() / "res";
+    if (exists(exePath.parent_path() / "configs")) {
+        exePath = exePath.parent_path();
+        return exePath / "configs";
+    }
 
-    if (exists(exePath.parent_path().parent_path() / "res"))
-        return exePath.parent_path().parent_path() / "res";
+    if (exists(exePath.parent_path().parent_path() / "configs")) {
+        exePath = exePath.parent_path().parent_path();
+        return exePath / "configs";
+    }
 
     return std::filesystem::path("");
 }
 
-std::filesystem::path FindConfPath(const std::filesystem::path& exePath) {
-    if (exists(exePath / "configs"))
-        return exePath / "configs";
+std::filesystem::path FindResPath(std::filesystem::path& exePath) {
+    if (exists(exePath / "res")) {
+        return exePath / "res";
+    }
 
-    if (exists(exePath.parent_path() / "configs"))
-        return exePath.parent_path() / "configs";
+    if (exists(exePath.parent_path() / "res")) {
+        exePath = exePath.parent_path();
+        return exePath / "res";
+    }
 
-    if (exists(exePath.parent_path().parent_path() / "configs"))
-        return exePath.parent_path().parent_path() / "configs";
+    if (exists(exePath.parent_path().parent_path() / "res")) {
+        exePath = exePath.parent_path().parent_path();
+        return exePath / "res";
+    }
 
     return std::filesystem::path("");
 }
@@ -46,10 +56,18 @@ std::filesystem::path CreateOutputDir(const mhd::Configs& configs,
     time(&rawTime);
 
     char currenOutputDir[80] = "000000_000000";
+
+#if defined(_MSC_VER)
     if (localtime_s(&timeInfo, &rawTime) == 0) {
         strftime(currenOutputDir, sizeof(currenOutputDir), "%Y%m%d_%H%M%S",
                  &timeInfo);
     }
+#else
+    if (localtime_r(&rawTime, &timeInfo) != nullptr) {
+        strftime(currenOutputDir, sizeof(currenOutputDir), "%Y%m%d_%H%M%S",
+                 &timeInfo);
+    }
+#endif
 
     auto outputPath = parantPath / std::string(currenOutputDir);
 
@@ -85,17 +103,17 @@ int main(int argc, char* argv[]) {
               << std::endl
               << std::endl;
 
-    std::filesystem::path exePath =
-        std::filesystem::path(argv[0]).parent_path();
+    std::filesystem::path projectPath =
+        std::filesystem::canonical(argv[0]).parent_path();
 
     std::filesystem::path configsPath, resPath;
 
-    if (configsPath = FindConfPath(exePath); configsPath.string() == "") {
+    if (configsPath = FindConfPath(projectPath); configsPath.string() == "") {
         std::cout << "Configuration folder not exists" << std::endl;
         return -1;
     }
 
-    if (resPath = FindResPath(exePath); resPath.string() == "") {
+    if (resPath = FindResPath(projectPath); resPath.string() == "") {
         std::cout << "Resources folder not exists" << std::endl;
         return -1;
     }
@@ -113,15 +131,17 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::cout << "Configurations file: " << configFile.filename().string() << std::endl;
+    std::cout << "Configurations file: " << configFile.filename().string()
+              << std::endl;
 
     mhd::Configs configs(configFile);
 
     const std::filesystem::path outputPath =
-        CreateOutputDir(configs, exePath.parent_path() / "outputs");
+        CreateOutputDir(configs, projectPath / "bin" / "outputs");
 
     std::cout << "Output directory: " << outputPath.filename().string()
-              << std::endl << std::endl;
+              << std::endl
+              << std::endl;
 
     std::cout << "Main Parameters:" << std::endl;
 

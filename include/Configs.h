@@ -5,7 +5,9 @@
 #include <filesystem>
 #include <string>
 
+#if defined(_MSC_VER)
 #define M_PI 3.141592653589793238462643
+#endif
 
 namespace mhd {
 

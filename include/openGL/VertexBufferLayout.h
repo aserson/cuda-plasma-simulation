@@ -37,6 +37,7 @@ public:
         //static_assert(false);
     }
 
+#ifdef _MSC_VER
     template <>
     void Push<float>(unsigned int count) {
         m_Elements.push_back({GL_FLOAT, count, GL_FALSE});
@@ -55,6 +56,7 @@ public:
         m_Stride +=
             count * VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE);
     }
+#endif
 
     inline const std::vector<VertexBufferElement> GetElemens() const {
         return m_Elements;

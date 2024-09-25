@@ -59,10 +59,12 @@ Painter::Painter(const mhd::Configs& configs,
       _gpuFloat(configs._linearLength) {
 
     if (readColorMap(configs._colorMap, resPath))
-        CUDA_CALL(cudaMemcpyToSymbol(colorMap, _colorMap.data(), _colorMap.size()));
+        CUDA_CALL(
+            cudaMemcpyToSymbol(colorMap, _colorMap.data(), _colorMap.size()));
 }
 
-bool Painter::readColorMap(const std::string& colorMapName, const std::filesystem::path& resPath) {
+bool Painter::readColorMap(const std::string& colorMapName,
+                           const std::filesystem::path& resPath) {
     std::filesystem::path filePath = resPath / "colormaps" / colorMapName;
     if (!exists(filePath)) {
         std::cout << "Color Map by name " << colorMapName << " not exists"

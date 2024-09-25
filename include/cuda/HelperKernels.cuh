@@ -6,7 +6,9 @@
 #include <cufft.h>
 #include <curand_kernel.h>
 
+#if defined(_MSC_VER)
 #define M_PI 3.141592653589793238462643
+#endif
 
 namespace mhd {
 // Multiplication Kernels

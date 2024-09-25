@@ -8,7 +8,7 @@
 #include "cuda/Buffers.cuh"
 #include "cuda/Helper.cuh"
 #include "cuda/Painter.cuh"
-#include "opengl/Creater.h"
+#include "openGL/Creater.h"
 
 namespace mhd {
 class Writer {

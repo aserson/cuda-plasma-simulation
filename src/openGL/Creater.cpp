@@ -1,17 +1,18 @@
-#include "opengl/Creater.h"
+#include "openGL/Creater.h"
 
-#include <iostream>
 #include <filesystem>
+#include <iostream>
 
-#include "opengl/VertexBufferLayout.h"
+#include "openGL/VertexBufferLayout.h"
 
 namespace opengl {
 
-Creater::Creater(const mhd::Configs& configs, const std::filesystem::path& resPath)
+Creater::Creater(const mhd::Configs& configs,
+                 const std::filesystem::path& resPath)
     : _showGraphics(configs._showGraphics),
       _currentTextureIndex(0),
       _lastTime(0) {
-    std::filesystem::path filePath = resPath / "shaders/Basic.shader";
+    std::filesystem::path filePath = resPath / "shaders/basic.shader";
 
     if (_showGraphics && exists(filePath)) {
         Create(configs._windowWidth, configs._windowHeight);
@@ -36,6 +37,10 @@ Creater::Creater(const mhd::Configs& configs, const std::filesystem::path& resPa
         _textures = new Textures(configs._texturesCount);
         _renderer = new Renderer();
     } else {
+        if (!exists(filePath)) {
+            std::cout << "Shader file not exists" << std::endl;
+        }
+
         _window = nullptr;
         _shader = nullptr;
         _textures = nullptr;
