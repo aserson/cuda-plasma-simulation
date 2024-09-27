@@ -17,6 +17,8 @@ protected:
     // Auxiliary classes
     FastFourierTransformator _transformator;
     KernelCaller _caller;
+    // Steams
+    cudaStream_t _stream1, _stream2;
 
     struct Fields {
         // Calculated Fields
@@ -32,14 +34,10 @@ protected:
         GpuComplexBuffer2D _complexBuffer;
         GpuDoubleBuffer2D _doubleBufferA, _doubleBufferB, _doubleBufferC;
 
-        // Auxiliary Fields: Temporary CPU
-        CpuDoubleBuffer1D _cpuLinearBufferX;
-        CpuDoubleBuffer1D _cpuLinearBufferY;
-
         // Output buffer: Temporary CPU
         CpuDoubleBuffer2D _output;
 
-        Fields(unsigned int gridLength, unsigned int linearLength)
+        Fields(unsigned int gridLength)
             : _vorticity(gridLength),
               _stream(gridLength),
               _current(gridLength),
@@ -51,19 +49,21 @@ protected:
               _doubleBufferA(gridLength),
               _doubleBufferB(gridLength),
               _doubleBufferC(gridLength),
-              _cpuLinearBufferX(linearLength),
-              _cpuLinearBufferY(linearLength),
               _output(gridLength) {}
     } _fields;
 
     void normallize(GpuComplexBuffer2D& field, double ratio);
     double maxRotorAmplitude(const GpuComplexBuffer2D& field);
-    double calcEnergy(const GpuComplexBuffer2D& field);
+    double calcEnergy(cudaStream_t& stream, const GpuComplexBuffer2D& field);
 
 public:
     Currents _currents;
 
     Helper(const Configs& configs);
+    ~Helper();
+
+    cudaStream_t& getStream1() { return _stream1; }
+    cudaStream_t& getStream2() { return _stream2; }
 
     void fillNormally(unsigned long seed, int offset = 1);
 
@@ -83,20 +83,18 @@ public:
     const GpuDoubleBuffer2D& getCurrent();
     const GpuDoubleBuffer2D& getPotential();
 
-    GpuComplexBuffer2D& Vorticity();
-    GpuComplexBuffer2D& Stream();
-    GpuComplexBuffer2D& Current();
-    GpuComplexBuffer2D& Potential();
-    GpuComplexBuffer2D& OldVorticity();
-    GpuComplexBuffer2D& OldPotential();
-    GpuComplexBuffer2D& RightPart();
-    GpuComplexBuffer2D& ComplexBuffer();
-    GpuDoubleBuffer2D& DoubleBufferA();
-    GpuDoubleBuffer2D& DoubleBufferB();
-    GpuDoubleBuffer2D& DoubleBufferC();
-    CpuDoubleBuffer1D& CpuLinearBufferX();
-    CpuDoubleBuffer1D& CpuLinearBufferY();
-    CpuDoubleBuffer2D& Output();
+    GpuComplexBuffer2D& vorticity() { return _fields._vorticity; }
+    GpuComplexBuffer2D& stream() { return _fields._stream; }
+    GpuComplexBuffer2D& current() { return _fields._current; }
+    GpuComplexBuffer2D& potential() { return _fields._potential; }
+    GpuComplexBuffer2D& oldVorticity() { return _fields._oldVorticity; }
+    GpuComplexBuffer2D& oldPotential() { return _fields._oldPotential; }
+    GpuComplexBuffer2D& rightPart() { return _fields._rightPart; }
+    GpuComplexBuffer2D& complexBuffer() { return _fields._complexBuffer; }
+    GpuDoubleBuffer2D& doubleBufferA() { return _fields._doubleBufferA; }
+    GpuDoubleBuffer2D& doubleBufferB() { return _fields._doubleBufferB; }
+    GpuDoubleBuffer2D& doubleBufferC() { return _fields._doubleBufferC; }
+    //CpuDoubleBuffer2D& Output();
 
     bool shouldContinue();
 };
@@ -108,7 +106,11 @@ private:
 
 public:
     CudaTimeCounter();
+    CudaTimeCounter(const std::string& startMessage);
     ~CudaTimeCounter();
+
+    void restart(const std::string& startMessage);
+    void done(const std::string& stopMessage);
 
     void start();
     void stop();

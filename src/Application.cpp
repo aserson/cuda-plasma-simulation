@@ -148,29 +148,19 @@ int main(int argc, char* argv[]) {
     std::cout << configs.ParametersPrint();
     configs.ParametersSave(outputPath);
 
-    mhd::CudaTimeCounter writerCounter;
-    std::cout << "Creating writer... ";
-    writerCounter.start();
-    mhd::Writer writer(outputPath, configs, resPath);
-    writerCounter.stop();
-    std::cout << "Done. Time: " << writerCounter.getTime() << std::endl;
-
-    mhd::CudaTimeCounter windowCounter;
-    std::cout << "Creating window... ";
-    windowCounter.start();
+    mhd::CudaTimeCounter counter("Creating window... ");
     opengl::Creater creater(configs, resPath);
-    windowCounter.stop();
-    std::cout << "Done. Time: " << windowCounter.getTime() << std::endl;
+    counter.done("Done. Time: ");
+
+    counter.restart("Creating writer... ");
+    mhd::Writer writer(outputPath, configs, resPath);
+    counter.done("Done. Time: ");
 
     mhd::CudaTimeCounter runCounter;
-    runCounter.start();
     {
-        mhd::CudaTimeCounter solverCounter;
-        std::cout << "Creating solver... ";
-        solverCounter.start();
+        counter.restart("Creating solver... ");
         mhd::Solver solver(configs);
-        solverCounter.stop();
-        std::cout << "Done. Time: " << solverCounter.getTime() << std::endl;
+        counter.done("Done. Time: ");
 
         // Initial Conditions
         solver.fillNormally(static_cast<unsigned long>(std::time(nullptr)));
@@ -218,8 +208,7 @@ int main(int argc, char* argv[]) {
             // Saving fields from previous timelayer
             solver.saveOldFields();
 
-            // Update Parameters (Energy and Time Step)
-            solver.updateEnergies();
+            // Update Time Step
             solver.updateTimeStep();
             solver.timeStep();
 
@@ -229,7 +218,5 @@ int main(int argc, char* argv[]) {
             creater.WindowUpdate();
         }
     }
-    runCounter.stop();
-    std::cout << std::endl
-              << "Simulation time: " << runCounter.getTime() << std::endl;
+    runCounter.done("\nSimulation time: ");
 }

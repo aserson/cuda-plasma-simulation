@@ -34,8 +34,7 @@ Configs::Configs(const std::filesystem::path& filePath) : _filePath(filePath) {
     // Kernel Run Parameters
     _dimBlockX = getDimBlockX();
     _dimBlockY = getDimBlockY();
-    _sharedLength = getSharedLength();
-    _linearLength = _gridLength * _gridLength / _sharedLength;
+    _dimBlock = getDimBlock();
 
     // Writer Settings
     _saveData = getSaveData();
@@ -215,11 +214,11 @@ unsigned int Configs::getDimBlockY() {
     }
 }
 
-unsigned int Configs::getSharedLength() {
-    if (_config["SharedLength"]) {
-        return _config["SharedLength"].as<unsigned int>();
+unsigned int Configs::getDimBlock() {
+    if (_config["DimBlock"]) {
+        return _config["DimBlock"].as<unsigned int>();
     } else {
-        return DefaultConfigs::defaultSharedLength;
+        return DefaultConfigs::defaultDimBlock;
     }
 }
 

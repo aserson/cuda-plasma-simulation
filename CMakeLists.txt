@@ -16,7 +16,9 @@ file(GLOB CPP_HEADERS ${CMAKE_SOURCE_DIR}/include/*.h)
 file(GLOB CUDA_HEADERS "${CMAKE_SOURCE_DIR}/include/cuda/*.cuh")
 file(GLOB GL_HEADERS "${CMAKE_SOURCE_DIR}/include/openGL/*.h")
 
-add_executable(simulation ${CPP_SOURCES} ${CUDA_SOURCES} ${GL_SOURCES} ${CPP_HEADERS} ${CUDA_HEADERS} ${GL_HEADERS})
+file(GLOB CONFIGS "${CMAKE_SOURCE_DIR}/configs/*.yaml")
+
+add_executable(simulation ${CPP_SOURCES} ${CUDA_SOURCES} ${GL_SOURCES} ${CPP_HEADERS} ${CUDA_HEADERS} ${GL_HEADERS} ${CONFIGS})
 
 target_include_directories(simulation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(simulation PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -29,6 +31,8 @@ if(WIN32)
     source_group("Headers Files" FILES ${CPP_HEADERS})
     source_group("Headers Files\\cuda" FILES ${CUDA_HEADERS})
     source_group("Headers Files\\openGL" FILES ${GL_HEADERS})
+
+    source_group("Configuration Files" FILES ${CONFIGS})
 
     target_include_directories(simulation PRIVATE ${CMAKE_SOURCE_DIR}/external/glew/include)
     target_include_directories(simulation PRIVATE ${CMAKE_SOURCE_DIR}/external/glfw/include)

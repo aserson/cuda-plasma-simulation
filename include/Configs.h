@@ -49,8 +49,8 @@ private:
 
         // Kernel Run Parameters
         static const unsigned int defaultDimBlockX = 32;
-        static const unsigned int defaultDimBlockY = 16;
-        static const unsigned int defaultSharedLength = 128;
+        static const unsigned int defaultDimBlockY = 32;
+        static const unsigned int defaultDimBlock = 256;
 
         // Writer Settings
         static const bool defaultSaveData = false;
@@ -95,7 +95,7 @@ private:
     // KernelRunParameters
     unsigned int getDimBlockX();
     unsigned int getDimBlockY();
-    unsigned int getSharedLength();
+    unsigned int getDimBlock();
 
     // Writer Settings
     bool getSaveData();
@@ -144,8 +144,7 @@ public:
     // Kernel Run Parameters
     unsigned int _dimBlockX;
     unsigned int _dimBlockY;
-    unsigned int _sharedLength;
-    unsigned int _linearLength;
+    unsigned int _dimBlock;
 
     // Writer Settings
     bool _saveData;

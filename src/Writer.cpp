@@ -18,8 +18,9 @@ std::string Writer::uintToStr(unsigned int value) {
     return output.str();
 }
 
-void Writer::save(const double* field, const std::filesystem::path& filePath) {
-    _output.copyFromDevice(field);
+void Writer::save(cudaStream_t& stream, const double* field,
+                  const std::filesystem::path& filePath) {
+    _output.copyFromDevice(stream, field);
 
     std::ofstream fData(filePath, std::ios::binary | std::ios::out);
     fData.write((char*)(_output.data()), _output.size());
@@ -52,20 +53,22 @@ bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
                 _outputPath / uintToStr(_outputNumber);
             std::filesystem::create_directory(currentPath);
 
+            cudaStreamSynchronize(helper.getStream1());
+
             if (_settings.saveVorticity) {
-                save(helper.getVorticity().data(),
+                save(helper.getStream1(), helper.getVorticity().data(),
                      _outputPath / "vorticity" / uintToStr(_outputNumber));
             }
             if (_settings.saveCurrent) {
-                save(helper.getVorticity().data(),
+                save(helper.getStream1(), helper.getVorticity().data(),
                      _outputPath / "current" / uintToStr(_outputNumber));
             }
             if (_settings.saveStream) {
-                save(helper.getVorticity().data(),
+                save(helper.getStream1(), helper.getVorticity().data(),
                      _outputPath / "stream" / uintToStr(_outputNumber));
             }
             if (_settings.savePotential) {
-                save(helper.getVorticity().data(),
+                save(helper.getStream1(), helper.getVorticity().data(),
                      _outputPath / "potential" / uintToStr(_outputNumber));
             }
 
@@ -74,18 +77,26 @@ bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
 
         if (_settings.showGraphics) {
             if (_settings.saveVorticity) {
-                _painter.doubleToPixels(helper.getVorticity());
+                _painter.doubleToPixels(helper.getStream1(),
+                                        helper.getVorticity(),
+                                        helper.doubleBufferB());
             } else if (_settings.saveCurrent) {
-                _painter.doubleToPixels(helper.getCurrent());
+                _painter.doubleToPixels(helper.getStream1(),
+                                        helper.getCurrent(),
+                                        helper.doubleBufferB());
             } else if (_settings.saveStream) {
-                _painter.doubleToPixels(helper.getStream());
+                _painter.doubleToPixels(helper.getStream1(), helper.getStream(),
+                                        helper.doubleBufferB());
             } else if (_settings.savePotential) {
-                _painter.doubleToPixels(helper.getPotential());
+                _painter.doubleToPixels(helper.getStream1(),
+                                        helper.getPotential(),
+                                        helper.doubleBufferB());
             }
             creater.AddTexture(_painter.getPixels().data(),
                                _painter.getLength(), _painter.getLength());
         }
 
+        helper.updateEnergies();
         printCurrents(helper._currents);
 
         step();

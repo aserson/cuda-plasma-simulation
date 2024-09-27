@@ -4,57 +4,6 @@
 
 namespace mhd {
 
-// CpuDoubleBuffer1D functions definitions
-CpuDoubleBuffer1D::CpuDoubleBuffer1D()
-    : _buffer(nullptr), _bufferLength(0), _bufferSize(0) {}
-
-CpuDoubleBuffer1D::CpuDoubleBuffer1D(unsigned int bufferLength)
-    : _bufferLength(bufferLength) {
-    _bufferSize = _bufferLength * sizeof(double);
-
-    CUDA_CALL(
-        cudaHostAlloc((void**)&_buffer, _bufferSize, cudaHostAllocDefault));
-}
-
-CpuDoubleBuffer1D::~CpuDoubleBuffer1D() {
-    CUDA_CALL(cudaFreeHost(_buffer));
-}
-
-double* CpuDoubleBuffer1D::data() {
-    return _buffer;
-}
-
-const double* CpuDoubleBuffer1D::data() const {
-    return _buffer;
-}
-
-double& CpuDoubleBuffer1D::operator[](unsigned int index) {
-    return _buffer[index];
-}
-
-const double& CpuDoubleBuffer1D::operator[](unsigned int index) const {
-    return _buffer[index];
-}
-
-unsigned int CpuDoubleBuffer1D::size() const {
-    return _bufferSize;
-}
-
-unsigned int CpuDoubleBuffer1D::length() const {
-    return _bufferLength;
-}
-
-void CpuDoubleBuffer1D::clear() {
-    memset(_buffer, 0x0, _bufferSize);
-}
-void CpuDoubleBuffer1D::copyToDevice(double* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
-}
-
-void CpuDoubleBuffer1D::copyFromDevice(const double* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
-}
-
 // CpuDoubleBuffer2D functions definitions
 CpuDoubleBuffer2D::CpuDoubleBuffer2D()
     : _buffer(nullptr), _sideLength(0), _bufferSize(0) {}
@@ -71,42 +20,20 @@ CpuDoubleBuffer2D::~CpuDoubleBuffer2D() {
     CUDA_CALL(cudaFreeHost(_buffer));
 }
 
-double* CpuDoubleBuffer2D::data() {
-    return _buffer;
-}
-
-const double* CpuDoubleBuffer2D::data() const {
-    return _buffer;
-}
-
-double& CpuDoubleBuffer2D::operator[](unsigned int index) {
-    return _buffer[index];
-}
-
-const double& CpuDoubleBuffer2D::operator[](unsigned int index) const {
-    return _buffer[index];
-}
-
-unsigned int CpuDoubleBuffer2D::size() const {
-    return _bufferSize;
-}
-
-unsigned int CpuDoubleBuffer2D::length() const {
-    return _sideLength;
-}
-
 void CpuDoubleBuffer2D::clear() {
     memset(_buffer, 0x0, _bufferSize);
 }
 
-void CpuDoubleBuffer2D::copyToDevice(double* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
+void CpuDoubleBuffer2D::copyToDevice(cudaStream_t& stream, double* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-void CpuDoubleBuffer2D::copyFromDevice(const double* src) {
+void CpuDoubleBuffer2D::copyFromDevice(cudaStream_t& stream,
+                                       const double* src) {
     if (src != nullptr) {
-        CUDA_CALL(
-            cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize,
+                                  cudaMemcpyDeviceToHost, stream));
     } else {
         std::cerr << "Copying Error from device: Source buffer is nullptr!"
                   << std::endl;
@@ -128,40 +55,29 @@ GpuDoubleBuffer2D::~GpuDoubleBuffer2D() {
     CUDA_CALL(cudaFree(_buffer));
 }
 
-double* GpuDoubleBuffer2D::data() {
-    return _buffer;
+void GpuDoubleBuffer2D::clear(cudaStream_t& stream) {
+    CUDA_CALL(cudaMemsetAsync(_buffer, 0x0, _bufferSize, stream));
 }
 
-const double* GpuDoubleBuffer2D::data() const {
-    return _buffer;
+void GpuDoubleBuffer2D::copyToHost(cudaStream_t& stream, double* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
-unsigned int GpuDoubleBuffer2D::size() const {
-    return _bufferSize;
+void GpuDoubleBuffer2D::copyFromHost(cudaStream_t& stream, const double* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-unsigned int GpuDoubleBuffer2D::length() const {
-    return _sideLength;
+void GpuDoubleBuffer2D::copyToDevice(cudaStream_t& stream, double* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize,
+                              cudaMemcpyDeviceToDevice, stream));
 }
 
-void GpuDoubleBuffer2D::clear() {
-    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
-}
-
-void GpuDoubleBuffer2D::copyToHost(double* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost));
-}
-
-void GpuDoubleBuffer2D::copyFromHost(const double* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyHostToDevice));
-}
-
-void GpuDoubleBuffer2D::copyToDevice(double* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToDevice));
-}
-
-void GpuDoubleBuffer2D::copyFromDevice(const double* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToDevice));
+void GpuDoubleBuffer2D::copyFromDevice(cudaStream_t& stream,
+                                       const double* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize,
+                              cudaMemcpyDeviceToDevice, stream));
 }
 
 // GpuComplexBuffer2D functions definitions
@@ -180,40 +96,32 @@ GpuComplexBuffer2D::~GpuComplexBuffer2D() {
     CUDA_CALL(cudaFree(_buffer));
 }
 
-cufftDoubleComplex* GpuComplexBuffer2D::data() {
-    return _buffer;
+void GpuComplexBuffer2D::clear(cudaStream_t& stream) {
+    CUDA_CALL(cudaMemsetAsync(_buffer, 0x0, _bufferSize, stream));
 }
 
-const cufftDoubleComplex* GpuComplexBuffer2D::data() const {
-    return _buffer;
+void GpuComplexBuffer2D::copyToHost(cudaStream_t& stream,
+                                    cufftDoubleComplex* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
-unsigned int GpuComplexBuffer2D::size() const {
-    return _bufferSize;
+void GpuComplexBuffer2D::copyFromHost(cudaStream_t& stream,
+                                      const cufftDoubleComplex* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-unsigned int GpuComplexBuffer2D::length() const {
-    return _sideLength;
+void GpuComplexBuffer2D::copyToDevice(cudaStream_t& stream,
+                                      cufftDoubleComplex* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize,
+                              cudaMemcpyDeviceToDevice, stream));
 }
 
-void GpuComplexBuffer2D::clear() {
-    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
-}
-
-void GpuComplexBuffer2D::copyToHost(cufftDoubleComplex* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost));
-}
-
-void GpuComplexBuffer2D::copyFromHost(const cufftDoubleComplex* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyHostToDevice));
-}
-
-void GpuComplexBuffer2D::copyToDevice(cufftDoubleComplex* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToDevice));
-}
-
-void GpuComplexBuffer2D::copyFromDevice(const cufftDoubleComplex* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToDevice));
+void GpuComplexBuffer2D::copyFromDevice(cudaStream_t& stream,
+                                        const cufftDoubleComplex* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize,
+                              cudaMemcpyDeviceToDevice, stream));
 }
 
 // GpuStateBuffer2D functions definitions
@@ -230,19 +138,6 @@ GpuStateBuffer2D::GpuStateBuffer2D(unsigned int sideLength)
 
 GpuStateBuffer2D::~GpuStateBuffer2D() {
     CUDA_CALL(cudaFree(_buffer));
-}
-
-curandState* GpuStateBuffer2D::data() {
-    return _buffer;
-}
-const curandState* GpuStateBuffer2D::data() const {
-    return _buffer;
-}
-unsigned int GpuStateBuffer2D::size() const {
-    return _bufferSize;
-}
-unsigned int GpuStateBuffer2D::length() const {
-    return _sideLength;
 }
 }  // namespace mhd
 
@@ -265,40 +160,18 @@ CpuFloatBuffer::~CpuFloatBuffer() {
     CUDA_CALL(cudaFreeHost(_buffer));
 }
 
-float* CpuFloatBuffer::data() {
-    return _buffer;
-}
-
-const float* CpuFloatBuffer::data() const {
-    return _buffer;
-}
-
-float& CpuFloatBuffer::operator[](unsigned int index) {
-    return _buffer[index];
-}
-
-const float& CpuFloatBuffer::operator[](unsigned int index) const {
-    return _buffer[index];
-}
-
-unsigned int CpuFloatBuffer::size() const {
-    return _bufferSize;
-}
-
-unsigned int CpuFloatBuffer::length() const {
-    return _bufferLength;
-}
-
 void CpuFloatBuffer::clear() {
     memset(_buffer, 0x0, _bufferSize);
 }
 
-void CpuFloatBuffer::copyToDevice(float* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
+void CpuFloatBuffer::copyToDevice(cudaStream_t& stream, float* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-void CpuFloatBuffer::copyFromDevice(const float* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+void CpuFloatBuffer::copyFromDevice(cudaStream_t& stream, const float* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
 // GpuFloatBuffer functions definitions
@@ -317,32 +190,18 @@ GpuFloatBuffer::~GpuFloatBuffer() {
     cudaFree(_buffer);
 }
 
-float* GpuFloatBuffer::data() {
-    return _buffer;
+void GpuFloatBuffer::clear(cudaStream_t& stream) {
+    CUDA_CALL(cudaMemsetAsync(_buffer, 0x0, _bufferSize, stream));
 }
 
-const float* GpuFloatBuffer::data() const {
-    return _buffer;
+void GpuFloatBuffer::copyToDevice(cudaStream_t& stream, float* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-unsigned int GpuFloatBuffer::size() const {
-    return _bufferSize;
-}
-
-unsigned int GpuFloatBuffer::length() const {
-    return _bufferLength;
-}
-
-void GpuFloatBuffer::clear() {
-    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
-}
-
-void GpuFloatBuffer::copyToDevice(float* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
-}
-
-void GpuFloatBuffer::copyFromDevice(const float* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+void GpuFloatBuffer::copyFromDevice(cudaStream_t& stream, const float* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
 // CpuPixelBuffer2D functions definitions
@@ -363,32 +222,20 @@ CpuPixelBuffer2D::~CpuPixelBuffer2D() {
     CUDA_CALL(cudaFreeHost(_buffer));
 }
 
-unsigned char* CpuPixelBuffer2D::data() {
-    return _buffer;
-}
-
-const unsigned char* CpuPixelBuffer2D::data() const {
-    return _buffer;
-}
-
-unsigned int CpuPixelBuffer2D::size() const {
-    return _bufferSize;
-}
-
-unsigned int CpuPixelBuffer2D::length() const {
-    return _sideLength;
-}
-
 void CpuPixelBuffer2D::clear() {
-    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
+    memset(_buffer, 0x0, _bufferSize);
 }
 
-void CpuPixelBuffer2D::copyToDevice(unsigned char* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice));
+void CpuPixelBuffer2D::copyToDevice(cudaStream_t& stream,
+                                    unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 
-void CpuPixelBuffer2D::copyFromDevice(const unsigned char* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost));
+void CpuPixelBuffer2D::copyFromDevice(cudaStream_t& stream,
+                                      const unsigned char* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
 // GPUPixelBuffer2D functions definitions
@@ -408,73 +255,19 @@ GpuPixelBuffer2D::~GpuPixelBuffer2D() {
     cudaFree(_buffer);
 }
 
-unsigned char* GpuPixelBuffer2D::data() {
-    return _buffer;
+void GpuPixelBuffer2D::clear(cudaStream_t& stream) {
+    CUDA_CALL(cudaMemsetAsync(_buffer, 0x0, _bufferSize, stream));
 }
 
-const unsigned char* GpuPixelBuffer2D::data() const {
-    return _buffer;
+void GpuPixelBuffer2D::copyToHost(cudaStream_t& stream,
+                                  unsigned char* dst) const {
+    CUDA_CALL(cudaMemcpyAsync(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost,
+                              stream));
 }
 
-unsigned int GpuPixelBuffer2D::size() const {
-    return _bufferSize;
-}
-
-unsigned int GpuPixelBuffer2D::length() const {
-    return _sideLength;
-}
-
-void GpuPixelBuffer2D::clear() {
-    CUDA_CALL(cudaMemset(_buffer, 0x0, _bufferSize));
-}
-
-void GpuPixelBuffer2D::copyToHost(unsigned char* dst) const {
-    CUDA_CALL(cudaMemcpy(dst, _buffer, _bufferSize, cudaMemcpyDeviceToHost));
-}
-
-void GpuPixelBuffer2D::copyFromHost(const unsigned char* src) {
-    CUDA_CALL(cudaMemcpy(_buffer, src, _bufferSize, cudaMemcpyHostToDevice));
-}
-
-// CPUColorMapBuffer functions definitions
-
-unsigned char* CpuColorMapBuffer::data() {
-    return _buffer;
-}
-
-const unsigned char* CpuColorMapBuffer::data() const {
-    return _buffer;
-}
-
-unsigned char& CpuColorMapBuffer::red(unsigned int index) {
-    return _buffer[3 * index + 0];
-}
-
-unsigned char& CpuColorMapBuffer::green(unsigned int index) {
-    return _buffer[3 * index + 1];
-}
-
-unsigned char& CpuColorMapBuffer::blue(unsigned int index) {
-    return _buffer[3 * index + 2];
-}
-
-const unsigned char& CpuColorMapBuffer::red(unsigned int index) const {
-    return _buffer[3 * index + 0];
-}
-
-const unsigned char& CpuColorMapBuffer::green(unsigned int index) const {
-    return _buffer[3 * index + 1];
-}
-
-const unsigned char& CpuColorMapBuffer::blue(unsigned int index) const {
-    return _buffer[3 * index + 2];
-}
-
-unsigned int CpuColorMapBuffer::size() const {
-    return sizeof(_buffer);
-}
-
-unsigned int CpuColorMapBuffer::length() const {
-    return _length;
+void GpuPixelBuffer2D::copyFromHost(cudaStream_t& stream,
+                                    const unsigned char* src) {
+    CUDA_CALL(cudaMemcpyAsync(_buffer, src, _bufferSize, cudaMemcpyHostToDevice,
+                              stream));
 }
 }  // namespace graphics

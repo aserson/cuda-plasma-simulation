@@ -1,4 +1,5 @@
 #include "cuda/FastFourierTransformator.cuh"
+#include "cuda/KernelCaller.cuh"
 
 #include <iostream>
 
@@ -14,34 +15,42 @@ void checkCufftResult(cufftResult_t result, const std::string& functionName,
 }
 
 namespace mhd {
+
 FastFourierTransformator::FastFourierTransformator(unsigned int gridLength) {
-    CUFFT_CALL(cufftPlan2d(&planD2Z, gridLength, gridLength, CUFFT_D2Z));
-    CUFFT_CALL(cufftPlan2d(&planZ2D, gridLength, gridLength, CUFFT_Z2D));
+    CUFFT_CALL(cufftPlan2d(&_planD2Z, gridLength, gridLength, CUFFT_D2Z));
+    CUFFT_CALL(cufftPlan2d(&_planZ2D, gridLength, gridLength, CUFFT_Z2D));
 }
 
 FastFourierTransformator::~FastFourierTransformator() {
-    CUFFT_CALL(cufftDestroy(planD2Z));
-    CUFFT_CALL(cufftDestroy(planZ2D));
+    CUFFT_CALL(cufftDestroy(_planD2Z));
+    CUFFT_CALL(cufftDestroy(_planZ2D));
 }
 
-void FastFourierTransformator::forwardFFT(double* input,
+void FastFourierTransformator::forwardFFT(cudaStream_t& stream, double* input,
                                           cufftDoubleComplex* output) const {
-    CUFFT_CALL(cufftExecD2Z(planD2Z, input, output));
+    CUFFT_CALL(cufftSetStream(_planD2Z, stream));
+    CUFFT_CALL(cufftExecD2Z(_planD2Z, input, output));
 }
 
-void FastFourierTransformator::inverseFFT(cufftDoubleComplex* input,
+void FastFourierTransformator::inverseFFT(cudaStream_t& stream,
+                                          cufftDoubleComplex* input,
                                           double* output) const {
-    CUFFT_CALL(cufftExecZ2D(planZ2D, input, output));
+    CUFFT_CALL(cufftSetStream(_planZ2D, stream));
+    CUFFT_CALL(cufftExecZ2D(_planZ2D, input, output));
 }
 
-void FastFourierTransformator::forward(GpuDoubleBuffer2D& input,
+void FastFourierTransformator::forward(cudaStream_t& stream,
+                                       GpuDoubleBuffer2D& input,
                                        GpuComplexBuffer2D& output) const {
-    CUFFT_CALL(cufftExecD2Z(planD2Z, input.data(), output.data()));
+    CUFFT_CALL(cufftSetStream(_planD2Z, stream));
+    CUFFT_CALL(cufftExecD2Z(_planD2Z, input.data(), output.data()));
 }
 
-void FastFourierTransformator::inverse(GpuComplexBuffer2D& input,
+void FastFourierTransformator::inverse(cudaStream_t& stream,
+                                       GpuComplexBuffer2D& input,
                                        GpuDoubleBuffer2D& output) const {
-    CUFFT_CALL(cufftExecZ2D(planZ2D, input.data(), output.data()));
+    CUFFT_CALL(cufftSetStream(_planZ2D, stream));
+    CUFFT_CALL(cufftExecZ2D(_planZ2D, input.data(), output.data()));
 }
 
 }  // namespace mhd

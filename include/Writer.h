@@ -16,7 +16,8 @@ private:
     CpuDoubleBuffer2D _output;
     graphics::Painter _painter;
 
-    void save(const double* field, const std::filesystem::path& filePath);
+    void save(cudaStream_t& stream, const double* field,
+              const std::filesystem::path& filePath);
     void clear();
 
     const std::filesystem::path _outputPath;

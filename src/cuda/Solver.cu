@@ -4,71 +4,72 @@
 
 namespace mhd {
 
-void Solver::calcJacobian(const GpuComplexBuffer2D& leftField,
+void Solver::calcJacobian(cudaStream_t& stream,
+                          const GpuComplexBuffer2D& leftField,
                           const GpuComplexBuffer2D& rightField) {
-    _caller.call(DealaliasingDiffByX_kernel, leftField.data(),
-                 ComplexBuffer().data(), _configs._gridLength,
+    _caller.call(stream, DealaliasingDiffByX_kernel, leftField.data(),
+                 complexBuffer().data(), _configs._gridLength,
                  _configs._dealWN);
-    _transformator.inverse(ComplexBuffer(), DoubleBufferA());
+    _transformator.inverse(stream, complexBuffer(), doubleBufferA());
 
-    _caller.call(DealaliasingDiffByY_kernel, rightField.data(),
-                 ComplexBuffer().data(), _configs._gridLength,
+    _caller.call(stream, DealaliasingDiffByY_kernel, rightField.data(),
+                 complexBuffer().data(), _configs._gridLength,
                  _configs._dealWN);
-    _transformator.inverse(ComplexBuffer(), DoubleBufferB());
+    _transformator.inverse(stream, complexBuffer(), doubleBufferB());
 
-    _caller.callFull(JacobianFirstPart_kernel, DoubleBufferA().data(),
-                     DoubleBufferB().data(), DoubleBufferC().data(),
+    _caller.callFull(stream, JacobianFirstPart_kernel, doubleBufferA().data(),
+                     doubleBufferB().data(), doubleBufferC().data(),
                      _configs._gridLength, _configs._lambda);
 
-    _caller.call(DealaliasingDiffByY_kernel, leftField.data(),
-                 ComplexBuffer().data(), _configs._gridLength,
+    _caller.call(stream, DealaliasingDiffByY_kernel, leftField.data(),
+                 complexBuffer().data(), _configs._gridLength,
                  _configs._dealWN);
-    _transformator.inverse(ComplexBuffer(), DoubleBufferA());
+    _transformator.inverse(stream, complexBuffer(), doubleBufferA());
 
-    _caller.call(DealaliasingDiffByX_kernel, rightField.data(),
-                 ComplexBuffer().data(), _configs._gridLength,
+    _caller.call(stream, DealaliasingDiffByX_kernel, rightField.data(),
+                 complexBuffer().data(), _configs._gridLength,
                  _configs._dealWN);
-    _transformator.inverse(ComplexBuffer(), DoubleBufferB());
+    _transformator.inverse(stream, complexBuffer(), doubleBufferB());
 
-    _caller.callFull(JacobianSecondPart_kernel, DoubleBufferA().data(),
-                     DoubleBufferB().data(), DoubleBufferC().data(),
+    _caller.callFull(stream, JacobianSecondPart_kernel, doubleBufferA().data(),
+                     doubleBufferB().data(), doubleBufferC().data(),
                      _configs._gridLength, _configs._lambda);
 
-    _transformator.forward(DoubleBufferC(), ComplexBuffer());
-    _caller.call(Dealaliasing_kernel, ComplexBuffer().data(),
+    _transformator.forward(stream, doubleBufferC(), complexBuffer());
+    _caller.call(stream, Dealaliasing_kernel, complexBuffer().data(),
                  _configs._gridLength, _configs._dealWN);
 }
 
 Solver::Solver(const mhd::Configs& configs) : Helper(configs) {}
 
 void Solver::calcKineticRigthPart() {
-    calcJacobian(Stream(), Vorticity());
-    _caller.call(FirstRigthPart_kernel, Vorticity().data(),
-                 ComplexBuffer().data(), RightPart().data(),
+    calcJacobian(_stream1, stream(), vorticity());
+    _caller.call(_stream1, FirstRigthPart_kernel, vorticity().data(),
+                 complexBuffer().data(), rightPart().data(),
                  _configs._gridLength, _configs._nu);
 
-    calcJacobian(Potential(), Current());
-    _caller.call(SecondRigthPart_kernel, ComplexBuffer().data(),
-                 RightPart().data(), _configs._gridLength);
+    calcJacobian(_stream1, potential(), current());
+    _caller.call(_stream1, SecondRigthPart_kernel, complexBuffer().data(),
+                 rightPart().data(), _configs._gridLength);
 }
 
 void Solver::calcMagneticRightPart() {
-    calcJacobian(Stream(), Potential());
-    _caller.call(ThirdRigthPart_kernel, Potential().data(),
-                 ComplexBuffer().data(), RightPart().data(),
+    calcJacobian(_stream1, stream(), potential());
+    _caller.call(_stream1, ThirdRigthPart_kernel, potential().data(),
+                 complexBuffer().data(), rightPart().data(),
                  _configs._gridLength, _configs._eta);
 }
 
 void Solver::timeSchemeKin(double weight) {
-    _caller.call(TimeScheme_kernel, Vorticity().data(), OldVorticity().data(),
-                 RightPart().data(), Vorticity().length(), _currents.timeStep,
-                 weight);
+    _caller.call(_stream1, TimeScheme_kernel, vorticity().data(),
+                 oldVorticity().data(), rightPart().data(),
+                 vorticity().length(), _currents.timeStep, weight);
 }
 
 void Solver::timeSchemeMag(double weight) {
-    _caller.call(TimeScheme_kernel, Potential().data(), OldPotential().data(),
-                 RightPart().data(), Potential().length(), _currents.timeStep,
-                 weight);
+    _caller.call(_stream1, TimeScheme_kernel, potential().data(),
+                 oldPotential().data(), rightPart().data(),
+                 potential().length(), _currents.timeStep, weight);
 }
 
 };  // namespace mhd

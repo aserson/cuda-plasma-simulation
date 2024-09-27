@@ -11,6 +11,7 @@
 #endif
 
 namespace mhd {
+
 // Multiplication Kernels
 __global__ static void MultDouble_kernel(double* input, unsigned int gridLength,
                                          double value, double* output) {
@@ -124,12 +125,14 @@ __global__ static void MinusInverseLaplasOperator_kernel(
 }
 
 // Shared Memory Kernels
-__global__ static void Max_kernel(const double* input, double* output) {
+__global__ static void Max_kernel(const double* input,
+                                  const unsigned int fieldSize,
+                                  double* output) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int tidx = threadIdx.x;
 
     extern __shared__ double sharedBuffer[];
-    sharedBuffer[tidx] = fabs(input[idx]);
+    sharedBuffer[tidx] = (idx < fieldSize) ? fabs(input[idx]) : 0.;
 
     __syncthreads();
 
@@ -161,12 +164,14 @@ __global__ static void EnergyTransform_kernel(double* velocityX,
         2.;
 }
 
-__global__ static void EnergyIntegrate_kernel(double* field, double* sum) {
+__global__ static void EnergyIntegrate_kernel(const double* field,
+                                              const unsigned int fieldSize,
+                                              double* sum) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int tidx = threadIdx.x;
 
     extern __shared__ double sharedBuffer[];
-    sharedBuffer[tidx] = field[idx];
+    sharedBuffer[tidx] = (idx < fieldSize) ? field[idx] : 0.;
 
     __syncthreads();
 

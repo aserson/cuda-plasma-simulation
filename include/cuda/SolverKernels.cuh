@@ -17,17 +17,14 @@ __global__ void DealaliasingDiffByX_kernel(const cufftDoubleComplex* input,
     if (x > gridLength / 2)
         x = x - gridLength;
 
-    if ((abs(x) < dealWN) && (abs(y) < dealWN)) {
-        output[idx].x = -(double)x * input[idx].y;
-        output[idx].y = (double)x * input[idx].x;
+    if ((abs(x) < dealWN) && (y < dealWN)) {
+        output[idx] = cuCmul(make_cuDoubleComplex(0, x), input[idx]);
     } else {
-        output[idx].x = 0.0;
-        output[idx].y = 0.0;
+        output[idx] = make_cuDoubleComplex(0, 0);
     }
 
-    if ((blockIdx.y == gridDim.y - 1) && (threadIdx.y == blockDim.y - 1)) {
-        output[idx + 1].x = 0.0;
-        output[idx + 1].y = 0.0;
+    if (y == gridLength / 2 - 1) {
+        output[idx + 1] = make_cuDoubleComplex(0, 0);
     }
 }
 
@@ -42,17 +39,14 @@ __global__ void DealaliasingDiffByY_kernel(const cufftDoubleComplex* input,
     if (x > gridLength / 2)
         x = x - gridLength;
 
-    if ((abs(x) < dealWN) && (abs(y) < dealWN)) {
-        output[idx].x = -(double)y * input[idx].y;
-        output[idx].y = (double)y * input[idx].x;
+    if ((abs(x) < dealWN) && (y < dealWN)) {
+        output[idx] = cuCmul(make_cuDoubleComplex(0, y), input[idx]);
     } else {
-        output[idx].x = 0.0;
-        output[idx].y = 0.0;
+        output[idx] = make_cuDoubleComplex(0, 0);
     }
 
-    if ((blockIdx.y == gridDim.y - 1) && (threadIdx.y == blockDim.y - 1)) {
-        output[idx + 1].x = 0.0;
-        output[idx + 1].y = 0.0;
+    if (y == gridLength / 2 - 1) {
+        output[idx + 1] = make_cuDoubleComplex(0, 0);
     }
 }
 
@@ -88,14 +82,12 @@ __global__ void Dealaliasing_kernel(cufftDoubleComplex* output,
     if (x > gridLength / 2)
         x = x - gridLength;
 
-    if ((abs(x) >= dealWN) || (abs(y) >= dealWN)) {
-        output[idx].x = 0.0;
-        output[idx].y = 0.0;
+    if ((abs(x) >= dealWN) || (y >= dealWN)) {
+        output[idx] = make_cuDoubleComplex(0, 0);
     }
 
-    if ((blockIdx.y == gridDim.y - 1) && (threadIdx.y == blockDim.y - 1)) {
-        output[idx + 1].x = 0.0;
-        output[idx + 1].y = 0.0;
+    if (y == gridLength / 2 - 1) {
+        output[idx + 1] = make_cuDoubleComplex(0, 0);
     }
 }
 

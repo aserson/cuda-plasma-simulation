@@ -34,83 +34,90 @@ private:
     unsigned int _dimGridY;
 
     // One-dimensional grid
-    unsigned int _dimBlockLinear;
-    unsigned int _dimGridLinear;
-    size_t _sharedSize;
-    size_t _sharedSizeFloat;
+    unsigned int _dimBlock;
+    unsigned int _dimGrid;
 
 public:
     KernelCaller(unsigned int gridLength, unsigned int dimBlockX,
-                 unsigned int dimBlockY, unsigned int sharedLength) {
+                 unsigned int dimBlockY, unsigned int dimBlock) {
         _dimBlockX = dimBlockX;
         _dimBlockY = dimBlockY;
         _dimGridX = gridLength / dimBlockX;
         _dimGridY = gridLength / dimBlockY;
 
-        _dimBlockLinear = sharedLength;
-        _dimGridLinear = gridLength * gridLength / sharedLength;
-        _sharedSize = sharedLength * sizeof(double);
-        _sharedSizeFloat = sharedLength * sizeof(float);
+        _dimBlock = dimBlock;
+        _dimGrid = gridLength * gridLength / dimBlock;
     }
 
     template <typename Kernel, typename... TArgs>
-    void call(Kernel kernel, TArgs... args);
+    void call(cudaStream_t& stream, Kernel kernel, TArgs... args);
 
     template <typename Kernel, typename... TArgs>
-    void callFull(Kernel kernel, TArgs... args);
+    void callFull(cudaStream_t& stream, Kernel kernel, TArgs... args);
 
     template <typename Kernel, typename... TArgs>
-    void callLinear(Kernel kernel, TArgs... args);
+    unsigned int callLinear(cudaStream_t& stream, unsigned int size,
+                            Kernel kernel, TArgs... args);
+
+    template <typename Kernel>
+    void callReduction(cudaStream_t& stream, unsigned int size, Kernel kernel,
+                       const double* input, double* output);
 
     template <typename Kernel, typename... TArgs>
-    void callLinearFloat(Kernel kernel, TArgs... args);
-
-    template <typename Kernel, typename... TArgs>
-    void callKernel(Kernel kernel, dim3 dimBlock, dim3 dimGrid,
-                    size_t sharedSize, TArgs... args);
+    void callKernel(cudaStream_t& stream, Kernel kernel, dim3 dimBlock,
+                    dim3 dimGrid, size_t sharedSize, TArgs... args);
 };
 
 template <typename Kernel, typename... TArgs>
-void KernelCaller::call(Kernel kernel, TArgs... args) {
-    dim3 dimBlock = dim3(_dimBlockX, _dimBlockY, 1);
-    dim3 dimGrid = dim3(_dimGridX, _dimGridY / 2, 1);
+void KernelCaller::call(cudaStream_t& stream, Kernel kernel, TArgs... args) {
+    dim3 dimBlock(_dimBlockX, _dimBlockY);
+    dim3 dimGrid(_dimGridX, _dimGridY / 2);
     size_t sharedSize = 0;
 
-    callKernel(kernel, dimBlock, dimGrid, sharedSize, args...);
+    callKernel(stream, kernel, dimBlock, dimGrid, sharedSize, args...);
 }
 
 template <typename Kernel, typename... TArgs>
-void KernelCaller::callFull(Kernel kernel, TArgs... args) {
-    dim3 dimBlock = dim3(_dimBlockY, _dimBlockY, 1);
-    dim3 dimGrid = dim3(_dimGridY, _dimGridY, 1);
+void KernelCaller::callFull(cudaStream_t& stream, Kernel kernel,
+                            TArgs... args) {
+    dim3 dimBlock(_dimBlockY, _dimBlockY);
+    dim3 dimGrid(_dimGridY, _dimGridY);
     size_t sharedSize = 0;
 
-    callKernel(kernel, dimBlock, dimGrid, sharedSize, args...);
+    callKernel(stream, kernel, dimBlock, dimGrid, sharedSize, args...);
 }
 
 template <typename Kernel, typename... TArgs>
-void KernelCaller::callLinear(Kernel kernel, TArgs... args) {
-    dim3 dimGrid = dim3(_dimGridLinear, 1, 1);
-    dim3 dimBlock = dim3(_dimBlockLinear, 1, 1);
-    size_t sharedSize = _sharedSize;
+unsigned int KernelCaller::callLinear(cudaStream_t& stream, unsigned int size,
+                                      Kernel kernel, TArgs... args) {
+    unsigned int blocks = (size + _dimBlock - 1) / _dimBlock;
+    size_t sharedSize = _dimBlock * sizeof(float);
 
-    callKernel(kernel, dimBlock, dimGrid, sharedSize, args...);
+    callKernel(stream, kernel, _dimBlock, blocks, sharedSize, args...);
+
+    return blocks;
+}
+
+template <typename Kernel>
+void KernelCaller::callReduction(cudaStream_t& stream, unsigned int size,
+                                 Kernel kernel, const double* input,
+                                 double* output) {
+
+    unsigned int taskSize =
+        callLinear(stream, size, kernel, input, size, output);
+
+    while (taskSize > 1) {
+        taskSize =
+            callLinear(stream, taskSize, kernel, output, taskSize, output);
+    }
 }
 
 template <typename Kernel, typename... TArgs>
-void KernelCaller::callLinearFloat(Kernel kernel, TArgs... args) {
-    dim3 dimGrid = dim3(_dimGridLinear, 1, 1);
-    dim3 dimBlock = dim3(_dimBlockLinear, 1, 1);
-    size_t sharedSize = _sharedSizeFloat;
-
-    callKernel(kernel, dimBlock, dimGrid, sharedSize, args...);
-}
-
-template <typename Kernel, typename... TArgs>
-void KernelCaller::callKernel(Kernel kernel, dim3 dimBlock, dim3 dimGrid,
-                              size_t sharedSize, TArgs... args) {
+void KernelCaller::callKernel(cudaStream_t& stream, Kernel kernel,
+                              dim3 dimBlock, dim3 dimGrid, size_t sharedSize,
+                              TArgs... args) {
 #ifdef __CUDACC__
-    kernel<<<dimGrid, dimBlock, sharedSize>>>(args...);
+    kernel<<<dimGrid, dimBlock, sharedSize, stream>>>(args...);
     CUDA_CALL(cudaGetLastError());
     CUDA_CALL(cudaDeviceSynchronize());
 #endif  // __CUDACC__

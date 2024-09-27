@@ -4,30 +4,6 @@
 #include <curand_kernel.h>
 
 namespace mhd {
-class CpuDoubleBuffer1D {
-private:
-    double* _buffer;
-    unsigned int _bufferLength;
-    unsigned int _bufferSize;
-
-public:
-    CpuDoubleBuffer1D();
-    CpuDoubleBuffer1D(unsigned int bufferLength);
-    ~CpuDoubleBuffer1D();
-
-    double* data();
-    const double* data() const;
-
-    double& operator[](unsigned int index);
-    const double& operator[](unsigned int index) const;
-
-    unsigned int size() const;
-    unsigned int length() const;
-
-    void clear();
-    void copyToDevice(double* dst) const;
-    void copyFromDevice(const double* src);
-};
 
 class CpuDoubleBuffer2D {
 private:
@@ -40,18 +16,20 @@ public:
     CpuDoubleBuffer2D(unsigned int sideLength);
     ~CpuDoubleBuffer2D();
 
-    double* data();
-    const double* data() const;
+    double* data() { return _buffer; }
+    const double* data() const { return _buffer; }
 
-    double& operator[](unsigned int index);
-    const double& operator[](unsigned int index) const;
+    double& operator[](unsigned int index) { return _buffer[index]; }
+    const double& operator[](unsigned int index) const {
+        return _buffer[index];
+    }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
 
     void clear();
-    void copyToDevice(double* dst) const;
-    void copyFromDevice(const double* src);
+    void copyToDevice(cudaStream_t& stream, double* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const double* src);
 };
 
 class GpuDoubleBuffer2D {
@@ -65,17 +43,18 @@ public:
     GpuDoubleBuffer2D(unsigned int sideLength);
     ~GpuDoubleBuffer2D();
 
-    double* data();
-    const double* data() const;
+    double* data() { return _buffer; }
+    const double* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
+    unsigned int fullLength() const { return _sideLength * _sideLength; }
 
-    void clear();
-    void copyToHost(double* dst) const;
-    void copyFromHost(const double* src);
-    void copyToDevice(double* dst) const;
-    void copyFromDevice(const double* src);
+    void clear(cudaStream_t& stream);
+    void copyToHost(cudaStream_t& stream, double* dst) const;
+    void copyFromHost(cudaStream_t& stream, const double* src);
+    void copyToDevice(cudaStream_t& stream, double* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const double* src);
 };
 
 class GpuComplexBuffer2D {
@@ -89,17 +68,17 @@ public:
     GpuComplexBuffer2D(unsigned int sideLength);
     ~GpuComplexBuffer2D();
 
-    cufftDoubleComplex* data();
-    const cufftDoubleComplex* data() const;
+    cufftDoubleComplex* data() { return _buffer; }
+    const cufftDoubleComplex* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
 
-    void clear();
-    void copyToHost(cufftDoubleComplex* dst) const;
-    void copyFromHost(const cufftDoubleComplex* src);
-    void copyToDevice(cufftDoubleComplex* dst) const;
-    void copyFromDevice(const cufftDoubleComplex* src);
+    void clear(cudaStream_t& stream);
+    void copyToHost(cudaStream_t& stream, cufftDoubleComplex* dst) const;
+    void copyFromHost(cudaStream_t& stream, const cufftDoubleComplex* src);
+    void copyToDevice(cudaStream_t& stream, cufftDoubleComplex* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const cufftDoubleComplex* src);
 };
 
 class GpuStateBuffer2D {
@@ -113,11 +92,11 @@ public:
     GpuStateBuffer2D(unsigned int sideLength);
     ~GpuStateBuffer2D();
 
-    curandState* data();
-    const curandState* data() const;
+    curandState* data() { return _buffer; }
+    const curandState* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
 };
 }  // namespace mhd
 
@@ -133,18 +112,18 @@ public:
     CpuFloatBuffer(unsigned int bufferLength);
     ~CpuFloatBuffer();
 
-    float* data();
-    const float* data() const;
+    float* data() { return _buffer; }
+    const float* data() const { return _buffer; }
 
-    float& operator[](unsigned int index);
-    const float& operator[](unsigned int index) const;
+    float& operator[](unsigned int index) { return _buffer[index]; }
+    const float& operator[](unsigned int index) const { return _buffer[index]; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _bufferLength; }
 
     void clear();
-    void copyToDevice(float* dst) const;
-    void copyFromDevice(const float* src);
+    void copyToDevice(cudaStream_t& stream, float* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const float* src);
 };
 
 class GpuFloatBuffer {
@@ -158,15 +137,15 @@ public:
     GpuFloatBuffer(unsigned int bufferLength);
     ~GpuFloatBuffer();
 
-    float* data();
-    const float* data() const;
+    float* data() { return _buffer; }
+    const float* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _bufferLength; }
 
-    void clear();
-    void copyToDevice(float* dst) const;
-    void copyFromDevice(const float* src);
+    void clear(cudaStream_t& stream);
+    void copyToDevice(cudaStream_t& stream, float* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const float* src);
 };
 
 class CpuPixelBuffer2D {
@@ -181,15 +160,20 @@ public:
     CpuPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
     ~CpuPixelBuffer2D();
 
-    unsigned char* data();
-    const unsigned char* data() const;
+    unsigned char* data() { return _buffer; }
+    const unsigned char* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned char& operator[](unsigned int index) { return _buffer[index]; }
+    const unsigned char& operator[](unsigned int index) const {
+        return _buffer[index];
+    }
+
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
 
     void clear();
-    void copyToDevice(unsigned char* dst) const;
-    void copyFromDevice(const unsigned char* src);
+    void copyToDevice(cudaStream_t& stream, unsigned char* dst) const;
+    void copyFromDevice(cudaStream_t& stream, const unsigned char* src);
 };
 
 class GpuPixelBuffer2D {
@@ -204,15 +188,15 @@ public:
     GpuPixelBuffer2D(unsigned int sideLength, unsigned int channels = 3);
     ~GpuPixelBuffer2D();
 
-    unsigned char* data();
-    const unsigned char* data() const;
+    unsigned char* data() { return _buffer; }
+    const unsigned char* data() const { return _buffer; }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return _bufferSize; }
+    unsigned int length() const { return _sideLength; }
 
-    void clear();
-    void copyToHost(unsigned char* dst) const;
-    void copyFromHost(const unsigned char* src);
+    void clear(cudaStream_t& stream);
+    void copyToHost(cudaStream_t& stream, unsigned char* dst) const;
+    void copyFromHost(cudaStream_t& stream, const unsigned char* src);
 };
 
 class CpuColorMapBuffer {
@@ -222,18 +206,24 @@ private:
     unsigned int _channels = 3;
 
 public:
-    unsigned char* data();
-    const unsigned char* data() const;
+    unsigned char* data() { return _buffer; }
+    const unsigned char* data() const { return _buffer; }
 
-    unsigned char& red(unsigned int index);
-    unsigned char& green(unsigned int index);
-    unsigned char& blue(unsigned int index);
+    unsigned char& red(unsigned int index) { return _buffer[3 * index + 0]; }
+    unsigned char& green(unsigned int index) { return _buffer[3 * index + 1]; }
+    unsigned char& blue(unsigned int index) { return _buffer[3 * index + 2]; }
 
-    const unsigned char& red(unsigned int index) const;
-    const unsigned char& green(unsigned int index) const;
-    const unsigned char& blue(unsigned int index) const;
+    const unsigned char& red(unsigned int index) const {
+        return _buffer[3 * index + 0];
+    }
+    const unsigned char& green(unsigned int index) const {
+        return _buffer[3 * index + 1];
+    }
+    const unsigned char& blue(unsigned int index) const {
+        return _buffer[3 * index + 2];
+    }
 
-    unsigned int size() const;
-    unsigned int length() const;
+    unsigned int size() const { return sizeof(_buffer); }
+    unsigned int length() const { return _length; }
 };
 }  // namespace graphics

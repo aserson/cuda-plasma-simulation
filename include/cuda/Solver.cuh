@@ -7,7 +7,7 @@
 namespace mhd {
 class Solver : public Helper {
 private:
-    void calcJacobian(const GpuComplexBuffer2D& leftField,
+    void calcJacobian(cudaStream_t& stream, const GpuComplexBuffer2D& leftField,
                       const GpuComplexBuffer2D& rightField);
 
 public:
