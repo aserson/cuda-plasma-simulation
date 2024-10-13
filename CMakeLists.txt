@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 cmake_policy(SET CMP0146 NEW)
 
-project(cuda-mhd-plasma-simulation LANGUAGES C CXX CUDA)
+project(cuda-plasma-simulation LANGUAGES C CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
