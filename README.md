@@ -43,3 +43,9 @@ Navigate into the binary directory and run the simulation:
 cd ..\bin
 .\simulation
 ```
+
+## Screen Recording of default simulation behavior
+
+https://github.com/user-attachments/assets/f174cf1d-ffc8-4d73-970c-da356a865390
+
+The video was sped up twice to reduce size of the file
