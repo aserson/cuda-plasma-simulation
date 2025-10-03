@@ -1,7 +1,8 @@
 GridLength : 1024
-Time : 50.
-OutputStep : 0.5
+Time : 100.
+OutputStep : 0.01
 KineticEnergy : 1.
 MagneticEnergy : 0.
-SavePotential : false
-SaveData : false
+AverageWN : 5
+ShowGraphics : true
+ColorMap : winter

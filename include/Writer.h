@@ -51,6 +51,10 @@ public:
         return ((time >= _outputTime) && (time <= _outputStop));
     }
 
+    bool shouldPaint(double time) {
+        return time >= _outputTime;
+    }
+
     void step() {
         _outputNumber++;
         _outputTime += _outputStep;

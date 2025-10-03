@@ -71,7 +71,9 @@ bool Writer::saveData(mhd::Helper& helper, opengl::Creater& creater) {
 
             saveCurrents(helper._currents, currentPath / "data.yaml");
         }
+    }
 
+    if (shouldPaint(helper._currents.time)) {
         if (_settings.showGraphics) {
             if (_settings.saveVorticity) {
                 _painter.doubleToPixels(helper.getVorticity());
